@@ -3,7 +3,7 @@ services:
     name: cmes-requisitions-api
     runtime: node
     rootDir: backend
-    repo: https://github.com/YOUR_USER/YOUR_REPO
+    repo: https://github.com/Mineazy/cmes-requisitions
     branch: main
     healthCheckPath: /api/health
     envVars:
