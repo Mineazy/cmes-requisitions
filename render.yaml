@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: cmes-requisitions-api
+    runtime: node
+    rootDir: backend
+    repo: https://github.com/YOUR_USER/YOUR_REPO
+    branch: main
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cmes-requisitions-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: 24h
+      - key: FRONTEND_URL
+        value: https://cmes-requisitions-api.onrender.com
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/index.js
+    autoDeploy: true
+
+databases:
+  - name: cmes-requisitions-db
+    databaseName: cmes_requisitions
+    plan: free

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copperbelt Mining - Requisitions Management System</title>
+  <meta name="description" content="Requisitions Management System for Copperbelt Mining & Equipment Supplies (CMES) Ltd. Manage Admin and Shop Use requisitions across approval chains.">
+  <link rel="stylesheet" href="index.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nOMdBm18xWJKy4sKLJLHBpqGP4gCwPy209whFQITRC8y3Hy5UB9OlJikkpYzUH5ip95SF2EHs1mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen" style="display: none;">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-icon" style="width:56px;height:56px;margin:0 auto 16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2L2 22h20L12 2zm0 3.99L18.8 19H5.2L12 5.99zM12 8l-4 8h8l-4-8z"/>
+          </svg>
+        </div>
+        <h2>CMES Requisitions</h2>
+        <p class="login-sub">Copperbelt Mining & Equipment Supplies</p>
+      </div>
+      <form id="login-form">
+        <div id="login-error" class="login-error" style="display:none;"></div>
+        <div class="form-group">
+          <label for="login-email">Corporate Email</label>
+          <input type="email" id="login-email" required placeholder="e.g. chansa.mwape@copperbeltmining.co.zm" value="chansa.mwape@copperbeltmining.co.zm">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required placeholder="Enter password" value="password123">
+        </div>
+        <button type="submit" id="login-btn" class="btn-primary" style="width:100%;justify-content:center;margin-top:8px;">Sign In</button>
+      </form>
+      <div class="login-hint">
+        <p>Demo Credentials:</p>
+        <small>Any user email / password123</small>
+        <small style="margin-top:4px;">e.g. mutale.chilufya@copperbeltmining.co.zm</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP SHELL -->
+  <div id="app-shell" style="display:none;flex-direction:column;height:100vh;">
+
+    <!-- Header -->
+    <header>
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2L2 22h20L12 2zm0 3.99L18.8 19H5.2L12 5.99zM12 8l-4 8h8l-4-8z"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>Copperbelt Mining & Equipment</h1>
+          <span>Requisitions Control Desk</span>
+        </div>
+      </div>
+
+      <div class="simulator-panel">
+        <span class="simulator-label">Active Role:</span>
+        <select id="user-role-select" class="role-switcher-dropdown"></select>
+        <span id="active-user-badge" class="role-badge-pill">Loading...</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="notification-bell-btn" onclick="window.toggleEmailDrawer()" title="View Email Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="email-badge-count" class="badge">0</span>
+        </button>
+        <button class="notification-bell-btn" onclick="window.logout()" title="Sign Out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar + Content -->
+    <div id="app-container">
+      <aside>
+        <ul class="nav-links">
+          <li class="nav-item active" id="nav-dashboard" data-view="dashboard">
+            <button>
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect>
+                <rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>
+              </svg>
+              Dashboard
+            </button>
+          </li>
+          <li class="nav-item" id="nav-new-req" data-view="create-requisition">
+            <button>
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              New Requisition
+            </button>
+          </li>
+          <li class="nav-item" id="nav-requisitions" data-view="requisition-queue">
+            <button>
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+              Requisitions List
+            </button>
+          </li>
+        </ul>
+        <div style="font-size:0.75rem;color:var(--text-muted);text-align:center;border-top:1px solid var(--border-color);padding-top:16px;">
+          <p>CMES Zambian Retails</p>
+          <p style="margin-top:4px;">ZMW / USD Multi-Currency</p>
+        </div>
+      </aside>
+
+      <main>
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="view-panel active">
+          <div class="view-title-block">
+            <div>
+              <h2>Operations & Finance Dashboard</h2>
+              <p>Welcome back, <span id="dash-username" style="color:var(--copper-light);font-weight:600;">Loading...</span> (Role: <span id="dash-role" style="font-weight:600;">...</span>)</p>
+            </div>
+            <button class="btn-primary" onclick="window.switchView('create-requisition')">+ Create Requisition</button>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card copper-accent">
+              <div class="metric-header"><span>Total Value (ZMW)</span><div class="metric-icon-box"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg></div></div>
+              <div class="metric-value" id="stat-total-value-zmw">K0.00</div>
+              <div class="metric-footer" id="stat-total-count-zmw">0 Requisitions</div>
+            </div>
+            <div class="metric-card blue-accent">
+              <div class="metric-header"><span>Total Value (USD)</span><div class="metric-icon-box"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div></div>
+              <div class="metric-value" id="stat-total-value-usd">$0.00</div>
+              <div class="metric-footer" id="stat-total-count-usd">0 Requisitions</div>
+            </div>
+            <div class="metric-card emerald-accent">
+              <div class="metric-header"><span>Approved / Disbursed</span><div class="metric-icon-box"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div></div>
+              <div class="metric-value" id="stat-approved-percent">0%</div>
+              <div class="metric-footer" id="stat-approved-count">0 Cleared / Issued</div>
+            </div>
+            <div class="metric-card ruby-accent">
+              <div class="metric-header"><span>Awaiting Your Action</span><div class="metric-icon-box"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div></div>
+              <div class="metric-value" id="stat-pending-action-count" style="color:var(--copper-light);">0</div>
+              <div class="metric-footer" id="stat-action-footer">Needs your review</div>
+            </div>
+          </div>
+          <div class="dashboard-sections">
+            <div class="glass-panel">
+              <div class="panel-header"><h3>Action Items (Pending Review)</h3><button class="action-btn-sm" onclick="window.switchView('requisition-queue')">View Queue</button></div>
+              <div id="dash-action-list" class="requisitions-grid"></div>
+            </div>
+            <div class="glass-panel">
+              <div class="panel-header"><h3>Spend Distribution</h3></div>
+              <div class="chart-container">
+                <svg width="180" height="180" viewBox="0 0 36 36" id="pie-chart-svg" style="transform:rotate(-90deg);"></svg>
+                <div class="chart-legend" id="pie-chart-legend"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: CREATE REQUISITION -->
+        <div id="view-create-requisition" class="view-panel">
+          <div class="view-title-block">
+            <div>
+              <h2>Initiate New Requisition</h2>
+              <p>Create purchases or shop expenses for copper, drills, tools, PPE, or administrative items.</p>
+            </div>
+          </div>
+          <div id="create-req-blocked" class="glass-panel form-card" style="display:none;text-align:center;padding:40px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;stroke:var(--ruby);margin-bottom:16px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <h3 style="color:var(--text-primary);margin-bottom:8px;">Access Restricted</h3>
+            <p style="color:var(--text-secondary);">Only users with the <strong>Requestor</strong> role can create new requisitions. Use the role switcher above to change to a Requestor.</p>
+          </div>
+          <div class="glass-panel form-card">
+            <form id="new-req-form" onsubmit="window.handleFormSubmit(event)">
+              <div class="form-grid-2">
+                <div class="form-group"><label for="req-title">Requisition Subject / Title</label><input type="text" id="req-title" required placeholder="e.g. Spare Diamond bits for Sandvik drills"></div>
+                <div class="form-group"><label for="req-type">Requisition Type</label><select id="req-type" required><option value="Admin">Admin Requisition (4 Approvers)</option><option value="Shop Use">Shop Use Requisition (2 Approvers)</option></select></div>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group"><label for="req-department">Department / Branch</label><select id="req-department" required><option value="Logistics & Stores - Kitwe">Logistics & Stores - Kitwe</option><option value="Operations - Solwezi Mine Hub">Operations - Solwezi Mine Hub</option><option value="Heavy Machinery Retail - Lusaka">Heavy Machinery Retail - Lusaka</option><option value="Administration - Ndola Head Office">Administration - Ndola Head Office</option></select></div>
+                <div class="form-group"><label for="req-currency">Requisition Currency</label><select id="req-currency" required><option value="ZMW">ZMW - Zambian Kwacha (K)</option><option value="USD">USD - United States Dollar ($)</option></select></div>
+              </div>
+              <div class="items-creator-block">
+                <div class="items-creator-title"><span>Required Items & Consumables</span><button type="button" class="action-btn-sm" onclick="window.addFormItemRow()">+ Add Item Row</button></div>
+                <div id="items-rows-container"></div>
+              </div>
+              <div class="form-total-bar"><span style="color:var(--text-secondary);font-size:0.95rem;">Total Request Amount:</span><span id="form-calculated-total" style="color:var(--copper-light);">K0.00</span></div>
+              <div class="submit-btn-group"><button type="button" class="btn-secondary" onclick="window.switchView('dashboard')">Cancel</button><button type="submit" class="btn-primary">Submit Requisition</button></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- VIEW: REQUISITION QUEUE -->
+        <div id="view-requisition-queue" class="view-panel">
+          <div class="view-title-block">
+            <div><h2>Requisitions Queue</h2><p>Monitor pending clearances, disbursements, returned change, and audits.</p></div>
+          </div>
+          <div class="filter-tabs">
+            <button id="tab-all" class="filter-tab active" onclick="window.changeQueueFilter('all')">All Requisitions</button>
+            <button id="tab-pending" class="filter-tab" onclick="window.changeQueueFilter('pending')">Awaiting Your Action</button>
+            <button id="tab-my" class="filter-tab" onclick="window.changeQueueFilter('my')">My Requests</button>
+          </div>
+          <div id="requisitions-queue-list" class="requisitions-grid"></div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- MODAL: REQUISITION DETAILS -->
+    <div class="modal-overlay" id="requisition-details-modal">
+      <div class="modal-content">
+        <button class="modal-close-btn" onclick="window.closeDetailsModal()" title="Close">&times;</button>
+        <div class="modal-left">
+          <div class="modal-header-block">
+            <div class="top-row"><span id="detail-req-id" class="req-id">REQ-0000-000</span><span id="detail-req-type" class="req-type-badge admin">Admin</span></div>
+            <h3 id="detail-req-title">Requisition Title</h3>
+          </div>
+          <div id="detail-rejection-banner" class="rejection-banner" style="display:none;"><strong>REJECTED</strong><span id="detail-rejection-reason"></span></div>
+          <div class="modal-sub-details">
+            <div><p>Submitted By: <strong id="detail-requestor">-</strong></p><p>Branch/Dept: <strong id="detail-dept">-</strong></p></div>
+            <div><p>Date Filed: <strong id="detail-date">-</strong></p><p>Currency: <strong id="detail-currency">-</strong></p></div>
+          </div>
+          <div class="modal-table-container">
+            <table class="modal-table"><thead><tr><th>Description</th><th>Category</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Unit Price</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody id="detail-items-tbody"></tbody></table>
+          </div>
+          <div id="detail-actions-panel" class="modal-actions-panel" style="display:none;">
+            <h4 class="actions-title">Requisition Actions Required</h4>
+            <div id="approver-actions-block" style="display:none;">
+              <div class="modal-action-buttons">
+                <button class="btn-approve" onclick="window.processApproval(true)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Approve Requisition</button>
+                <button class="btn-reject" onclick="window.showRejectionReasonBox()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Reject Requisition</button>
+              </div>
+              <div id="rejection-reason-container" class="rejection-reason-box">
+                <label for="reject-reason" style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);">Enter Rejection Reason (Required)</label>
+                <textarea id="reject-reason" placeholder="State clearly why you are rejecting this requisition..." rows="3"></textarea>
+                <div style="display:flex;gap:8px;"><button class="btn-reject" style="width:auto;padding:8px 16px;" onclick="window.processApproval(false)">Submit Rejection</button><button class="btn-secondary" style="width:auto;padding:8px 16px;" onclick="window.hideRejectionReasonBox()">Cancel</button></div>
+              </div>
+            </div>
+            <div id="treasurer-actions-block" style="display:none;">
+              <button class="btn-approve" style="background:linear-gradient(135deg,var(--copper),var(--copper-dark));" onclick="window.processTreasurerDisburse()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12" y2="6"></line></svg> Process Disbursement</button>
+            </div>
+            <div id="treasurer-clearance-block" style="display:none;">
+              <button class="btn-approve" onclick="window.processTreasurerClear()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Reconcile & Clear Change</button>
+            </div>
+            <div id="requestor-receipts-block" style="display:none;">
+              <button class="btn-approve" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);" onclick="window.processRequestorSubmitReceipts()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> Submit Expenses & Return Change</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-right">
+          <div class="modal-right-section"><h4>Approval Stage Progress</h4><ul id="detail-stepper" class="stepper-list"></ul></div>
+          <div class="modal-right-section"><h4>Authenticity Signatures</h4><div id="detail-signatures-grid" class="signatures-grid"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: QR VERIFICATION -->
+    <div class="modal-overlay" id="qr-verification-modal">
+      <div class="verification-modal-card">
+        <button class="modal-close-btn" onclick="window.closeVerificationModal()" title="Close">&times;</button>
+        <div class="verification-status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <h3>Security Seal Verified</h3>
+        <p class="sub">CMES Digital Verification Audit</p>
+        <div class="verification-info-table">
+          <div class="verification-info-row"><span class="label">Requisition ID</span><span class="val" id="verify-req-id">-</span></div>
+          <div class="verification-info-row"><span class="label">Signer / Approver</span><span class="val" id="verify-signer">-</span></div>
+          <div class="verification-info-row"><span class="label">Corporate Role</span><span class="val" id="verify-role">-</span></div>
+          <div class="verification-info-row"><span class="label">Stage Stamp</span><span class="val" id="verify-stage">-</span></div>
+          <div class="verification-info-row"><span class="label">Timestamp</span><span class="val" id="verify-time">-</span></div>
+          <div class="verification-info-row hash"><span class="label">ECDSA Signature</span><span class="val" id="verify-hash">-</span></div>
+        </div>
+        <button class="btn-primary" style="width:100%" onclick="window.closeVerificationModal()">Close Audit View</button>
+      </div>
+    </div>
+
+    <!-- EMAIL DRAWER -->
+    <div class="email-drawer" id="email-simulator-drawer">
+      <div class="email-drawer-header">
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Corporate Email Simulation</h3>
+        <button class="modal-close-btn" style="position:static;width:28px;height:28px;" onclick="window.toggleEmailDrawer()">&times;</button>
+      </div>
+      <div id="email-list-container" class="email-list"></div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
