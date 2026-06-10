@@ -9,7 +9,8 @@ const USERS = [
   { name: 'Kondwelani Banda', role: '2nd Approver', email: 'kondwelani.banda@copperbeltmining.co.zm', dept: 'Operations - Solwezi Mine Hub', password: 'password123' },
   { name: 'Sibongile Phiri', role: '3rd Approver', email: 'sibongile.phiri@copperbeltmining.co.zm', dept: 'Operations - Solwezi Mine Hub', password: 'password123' },
   { name: 'Mwansa Kabwe', role: 'Final Approver', email: 'mwansa.kabwe@copperbeltmining.co.zm', dept: 'Administration - Ndola Head Office', password: 'password123' },
-  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Finance - Lusaka Headquarters', password: 'password123' }
+  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Finance - Lusaka Headquarters', password: 'password123' },
+  { name: 'Lungowe Mwila', role: 'Admin', email: 'lungowe.mwila@copperbeltmining.co.zm', dept: 'IT & Systems - Ndola Head Office', password: 'password123' }
 ];
 
 async function seed() {

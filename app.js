@@ -86,6 +86,7 @@ async function init() {
 
   setupEventListeners();
   await loadInitialData();
+  document.getElementById('nav-admin').style.display = state.currentUser.role === 'Admin' ? '' : 'none';
   switchView('dashboard');
 }
 
@@ -199,6 +200,10 @@ function switchView(viewName) {
     document.getElementById('nav-requisitions').classList.add('active');
     document.getElementById('view-requisition-queue').classList.add('active');
     renderQueue();
+  } else if (viewName === 'admin-panel') {
+    document.getElementById('nav-admin').classList.add('active');
+    document.getElementById('view-admin-panel').classList.add('active');
+    renderAdminPanel();
   }
 }
 
@@ -802,6 +807,191 @@ function showToastNotification(message) {
   setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(20px)'; setTimeout(() => toast.remove(), 300); }, 4000);
 }
 
+// --- Admin Panel ---
+async function renderAdminPanel() {
+  try {
+    const [statsRes, usersRes, reqsRes] = await Promise.all([
+      apiFetch('GET', '/admin/stats'),
+      apiFetch('GET', '/admin/users'),
+      apiFetch('GET', '/admin/requisitions')
+    ]);
+
+    const stats = statsRes.stats;
+    document.getElementById('admin-stat-users').textContent = stats.totalUsers;
+    document.getElementById('admin-stat-requisitions').textContent = stats.totalRequisitions;
+    const pendingCount = stats.byStatus.filter(s => !['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
+    const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
+    document.getElementById('admin-stat-pending').textContent = pendingCount;
+    document.getElementById('admin-stat-closed').textContent = closedCount;
+
+    renderAdminRequisitions(reqsRes.requisitions);
+    renderAdminUsers(usersRes.users);
+  } catch (err) {
+    showToastNotification('Failed to load admin data: ' + err.message);
+  }
+
+  document.getElementById('admin-req-search').oninput = debounce(adminFetchRequisitions, 300);
+  document.getElementById('admin-req-status-filter').onchange = adminFetchRequisitions;
+  document.getElementById('admin-req-refresh').onclick = adminFetchRequisitions;
+  document.getElementById('admin-add-user-btn').onclick = () => openAdminUserModal();
+}
+
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+}
+
+async function adminFetchRequisitions() {
+  const search = document.getElementById('admin-req-search').value;
+  const status = document.getElementById('admin-req-status-filter').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status) params.set('status', status);
+  try {
+    const res = await apiFetch('GET', '/admin/requisitions?' + params.toString());
+    renderAdminRequisitions(res.requisitions);
+  } catch (err) {
+    showToastNotification('Search failed: ' + err.message);
+  }
+}
+
+function renderAdminRequisitions(requisitions) {
+  const container = document.getElementById('admin-req-list');
+  if (requisitions.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">No requisitions found.</div>';
+    return;
+  }
+  container.innerHTML = requisitions.map(r => {
+    const badge = r.status === 'Rejected' ? 'badge-rejected' : r.status === 'Change Cleared' ? 'badge-cleared' : 'badge-pending';
+    return `<div class="admin-req-card">
+      <div class="req-info">
+        <h4>${r.req_id} - ${escHtml(r.title)}</h4>
+        <p>${escHtml(r.requestor_name)} &middot; ${r.type} &middot; ${r.currency === 'ZMW' ? 'K' : '$'}${parseFloat(r.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <span class="status-badge ${badge}">${r.status}</span>
+        <button class="action-btn-sm" onclick="window.openDetails('${r.req_id}')">View</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminUsers(users) {
+  state._adminUsers = users;
+  const container = document.getElementById('admin-user-list');
+  container.innerHTML = `<table class="admin-user-table">
+    <thead><tr>
+      <th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Created</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${users.map(u => `<tr>
+      <td style="color:var(--text-muted);font-size:0.75rem;">${u.id}</td>
+      <td style="font-weight:500;">${escHtml(u.name)}</td>
+      <td style="font-size:0.75rem;color:var(--text-secondary);">${escHtml(u.email)}</td>
+      <td><span class="status-badge badge-pending" style="font-size:0.7rem;">${escHtml(u.role)}</span></td>
+      <td style="font-size:0.75rem;color:var(--text-secondary);">${escHtml(u.department || '-')}</td>
+      <td style="font-size:0.75rem;color:var(--text-secondary);">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td><div class="admin-user-actions">
+        <button onclick="window.openAdminUserModal(${u.id})">Edit</button>
+        <button onclick="window.adminResetPassword(${u.id})">Reset PW</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+let editingUserId = null;
+
+function openAdminUserModal(userId) {
+  editingUserId = userId || null;
+  const titleEl = document.getElementById('admin-user-modal-title');
+  const submitBtn = document.getElementById('admin-user-submit-btn');
+  const nameEl = document.getElementById('admin-user-name');
+  const emailEl = document.getElementById('admin-user-email');
+  const roleEl = document.getElementById('admin-user-role');
+  const deptEl = document.getElementById('admin-user-dept');
+  const pwGroup = document.getElementById('admin-password-group');
+  const pwEl = document.getElementById('admin-user-password');
+
+  if (userId) {
+    titleEl.textContent = 'Edit User';
+    submitBtn.textContent = 'Update';
+    pwGroup.style.display = 'none';
+    pwEl.required = false;
+    const user = state._adminUsers ? state._adminUsers.find(u => u.id === userId) : null;
+    if (user) {
+      nameEl.value = user.name;
+      emailEl.value = user.email;
+      roleEl.value = user.role;
+      deptEl.value = user.department || '';
+    }
+  } else {
+    titleEl.textContent = 'Add User';
+    submitBtn.textContent = 'Save';
+    pwGroup.style.display = 'block';
+    pwEl.required = true;
+    nameEl.value = '';
+    emailEl.value = '';
+    roleEl.value = 'Requestor';
+    deptEl.value = '';
+    pwEl.value = '';
+  }
+
+  document.getElementById('admin-user-form').onsubmit = handleAdminUserSubmit;
+  document.getElementById('admin-user-modal').classList.add('active');
+}
+
+function closeAdminUserModal() {
+  document.getElementById('admin-user-modal').classList.remove('active');
+  editingUserId = null;
+}
+
+async function handleAdminUserSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('admin-user-name').value;
+  const email = document.getElementById('admin-user-email').value;
+  const role = document.getElementById('admin-user-role').value;
+  const dept = document.getElementById('admin-user-dept').value;
+  const password = document.getElementById('admin-user-password').value;
+  const btn = document.getElementById('admin-user-submit-btn');
+
+  try {
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    if (editingUserId) {
+      await apiFetch('PUT', '/admin/users/' + editingUserId, { name, email, role, department: dept });
+      showToastNotification('User updated successfully');
+    } else {
+      await apiFetch('POST', '/admin/users', { name, email, role, department: dept, password });
+      showToastNotification('User created successfully');
+    }
+
+    closeAdminUserModal();
+    renderAdminPanel();
+  } catch (err) {
+    showToastNotification('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editingUserId ? 'Update' : 'Save';
+  }
+}
+
+async function adminResetPassword(userId) {
+  const newPw = prompt('Enter new password (min 6 characters):');
+  if (!newPw || newPw.length < 6) return;
+  try {
+    await apiFetch('POST', '/admin/users/' + userId + '/reset-password', { password: newPw });
+    showToastNotification('Password reset successfully');
+  } catch (err) {
+    showToastNotification('Error: ' + err.message);
+  }
+}
+
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
 // --- Globals for HTML onclick ---
 window.switchView = switchView;
 window.changeQueueFilter = changeQueueFilter;
@@ -821,6 +1011,9 @@ window.processRequestorSubmitReceipts = processRequestorSubmitReceipts;
 window.closeVerificationModal = closeVerificationModal;
 window.viewSignatureVerification = viewSignatureVerification;
 window.logout = logout;
+window.openAdminUserModal = openAdminUserModal;
+window.closeAdminUserModal = closeAdminUserModal;
+window.adminResetPassword = adminResetPassword;
 
 // Start
 document.addEventListener('DOMContentLoaded', init);

@@ -114,6 +114,14 @@
               Requisitions List
             </button>
           </li>
+          <li class="nav-item" id="nav-admin" data-view="admin-panel" style="display:none;">
+            <button>
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Admin Panel
+            </button>
+          </li>
         </ul>
         <div style="font-size:0.75rem;color:var(--text-muted);text-align:center;border-top:1px solid var(--border-color);padding-top:16px;">
           <p>CMES Zambian Retails</p>
@@ -215,6 +223,63 @@
           <div id="requisitions-queue-list" class="requisitions-grid"></div>
         </div>
 
+        <!-- VIEW: ADMIN PANEL -->
+        <div id="view-admin-panel" class="view-panel">
+          <div class="view-title-block">
+            <div><h2>System Administration</h2><p>Manage users, monitor system activity, and oversee all requisitions.</p></div>
+          </div>
+          <div class="admin-stats-grid" id="admin-stats-grid">
+            <div class="metric-card copper-accent">
+              <div class="metric-header"><span>Total Users</span></div>
+              <div class="metric-value" id="admin-stat-users">-</div>
+            </div>
+            <div class="metric-card blue-accent">
+              <div class="metric-header"><span>Total Requisitions</span></div>
+              <div class="metric-value" id="admin-stat-requisitions">-</div>
+            </div>
+            <div class="metric-card emerald-accent">
+              <div class="metric-header"><span>Pending</span></div>
+              <div class="metric-value" id="admin-stat-pending">-</div>
+            </div>
+            <div class="metric-card ruby-accent">
+              <div class="metric-header"><span>Rejected / Closed</span></div>
+              <div class="metric-value" id="admin-stat-closed">-</div>
+            </div>
+          </div>
+          <div class="dashboard-sections" style="margin-top:0;">
+            <div class="glass-panel">
+              <div class="panel-header">
+                <h3>All Requisitions</h3>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input type="text" id="admin-req-search" placeholder="Search req ID, title, requestor..." style="padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.8rem;width:220px;">
+                  <select id="admin-req-status-filter" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.8rem;">
+                    <option value="">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="1st Approver stage">1st Approver</option>
+                    <option value="2nd Approver Stage">2nd Approver</option>
+                    <option value="3rd Approver Stage">3rd Approver</option>
+                    <option value="Final Approver">Final Approver</option>
+                    <option value="Pending Disbursement">Pending Disbursement</option>
+                    <option value="Issued">Issued</option>
+                    <option value="Change Returned/Pending">Change Returned</option>
+                    <option value="Change Cleared">Change Cleared</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                  <button class="action-btn-sm" id="admin-req-refresh">Refresh</button>
+                </div>
+              </div>
+              <div id="admin-req-list" class="requisitions-grid"></div>
+            </div>
+            <div class="glass-panel">
+              <div class="panel-header">
+                <h3>User Management</h3>
+                <button class="action-btn-sm" id="admin-add-user-btn">+ Add User</button>
+              </div>
+              <div id="admin-user-list" style="overflow-x:auto;"></div>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
 
@@ -263,6 +328,35 @@
           <div class="modal-right-section"><h4>Approval Stage Progress</h4><ul id="detail-stepper" class="stepper-list"></ul></div>
           <div class="modal-right-section"><h4>Authenticity Signatures</h4><div id="detail-signatures-grid" class="signatures-grid"></div></div>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL: ADMIN USER -->
+    <div class="modal-overlay" id="admin-user-modal">
+      <div class="modal-content" style="max-width:480px;">
+        <button class="modal-close-btn" onclick="window.closeAdminUserModal()" title="Close">&times;</button>
+        <h3 id="admin-user-modal-title">Add User</h3>
+        <form id="admin-user-form" style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
+          <div class="form-group"><label for="admin-user-name">Full Name</label><input type="text" id="admin-user-name" required></div>
+          <div class="form-group"><label for="admin-user-email">Email</label><input type="email" id="admin-user-email" required></div>
+          <div class="form-group"><label for="admin-user-role">Role</label>
+            <select id="admin-user-role" required>
+              <option value="Requestor">Requestor</option>
+              <option value="1st Approver">1st Approver</option>
+              <option value="2nd Approver">2nd Approver</option>
+              <option value="3rd Approver">3rd Approver</option>
+              <option value="Final Approver">Final Approver</option>
+              <option value="Treasurer">Treasurer</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group"><label for="admin-user-dept">Department</label><input type="text" id="admin-user-dept"></div>
+          <div class="form-group" id="admin-password-group"><label for="admin-user-password">Password</label><input type="password" id="admin-user-password" minlength="6"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+            <button type="button" class="btn-secondary" onclick="window.closeAdminUserModal()">Cancel</button>
+            <button type="submit" class="btn-primary" id="admin-user-submit-btn">Save</button>
+          </div>
+        </form>
       </div>
     </div>
 

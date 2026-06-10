@@ -1612,3 +1612,76 @@ main {
     right: -100%;
   }
 }
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.admin-user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.admin-user-table th {
+  text-align: left;
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+}
+.admin-user-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+.admin-user-table tr:hover td {
+  background: var(--bg-card-hover);
+}
+.admin-user-actions {
+  display: flex;
+  gap: 4px;
+}
+.admin-user-actions button {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.admin-user-actions button:hover {
+  border-color: var(--copper);
+  color: var(--copper-light);
+}
+.admin-req-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.15s;
+}
+.admin-req-card:hover {
+  border-color: var(--border-color-hover);
+  background: var(--bg-card-hover);
+}
+.admin-req-card .req-info h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.admin-req-card .req-info p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
