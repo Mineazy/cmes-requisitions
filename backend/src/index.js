@@ -84,7 +84,7 @@ async function start() {
     }
 
     app.listen(PORT, () => {
-      console.log(`CMES Requisitions API running on port ${PORT}`);
+      console.log(`EazyTools Zambia Requisitions API running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (err) {

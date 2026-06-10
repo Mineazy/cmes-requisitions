@@ -153,7 +153,7 @@ async function seed() {
        VALUES ($1, $2, $3, $4, $5, $6, $7, false, NOW())`,
       ['purchasing-alert@copperbeltmining.co.zm', sibongile.email, sibongile.name,
        'Action Required: Requisition REQ-2026-0001 Awaiting 3rd Approval',
-       `Dear ${sibongile.name},\n\nRequisition REQ-2026-0001 ("Kitwe Headquarters IT Upgrades") has been approved by the 2nd Approver and is now awaiting your review in the 3rd Approver Stage.\n\nTotal: K62,500.00\n\nPlease log in to CMES Requisitions Desk to action this.`,
+        `Dear ${sibongile.name},\n\nRequisition REQ-2026-0001 ("Kitwe Headquarters IT Upgrades") has been approved by the 2nd Approver and is now awaiting your review in the 3rd Approver Stage.\n\nTotal: K62,500.00\n\nPlease log in to EazyTools Zambia Requisitions Desk to action this.`,
        'REQ-2026-0001', '3rd Approver']
     );
 

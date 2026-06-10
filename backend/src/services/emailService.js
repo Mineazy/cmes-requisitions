@@ -37,7 +37,7 @@ async function notifyNextApprover(req) {
     to: recipient.email,
     recipientName: recipient.name,
     subject: `Review Required: Requisition ${req.req_id} moved to ${req.status}`,
-    body: `Dear ${recipient.name},\n\nRequisition ${req.req_id} ("${req.title}") is now awaiting your action in the ${req.status} stage.\n\nDetails:\n- Requester: ${req.requestor_name || 'N/A'}\n- Total Value: ${formattedAmount}\n\nPlease log in to the CMES Requisitions Desk to action this.`,
+    body: `Dear ${recipient.name},\n\nRequisition ${req.req_id} ("${req.title}") is now awaiting your action in the ${req.status} stage.\n\nDetails:\n- Requester: ${req.requestor_name || 'N/A'}\n- Total Value: ${formattedAmount}\n\nPlease log in to the EazyTools Zambia Requisitions Desk to action this.`,
     reqId: req.req_id,
     targetRole
   });

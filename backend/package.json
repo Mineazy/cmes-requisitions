@@ -1,7 +1,7 @@
 {
   "name": "cmes-requisitions-backend",
   "version": "2.0.0",
-  "description": "Copperbelt Mining Requisitions Management System - Backend API",
+  "description": "EazyTools Zambia Requisitions Management System - Backend API",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

@@ -59,6 +59,14 @@ async function login(email, password) {
   return data.user;
 }
 
+function updateUserDisplay() {
+  const u = state.currentUser;
+  if (!u) return;
+  document.getElementById('active-user-badge').textContent = u.role;
+  document.getElementById('dash-username').textContent = u.name;
+  document.getElementById('dash-role').textContent = u.role;
+}
+
 function logout() {
   state.token = null;
   state.currentUser = null;
@@ -83,6 +91,7 @@ async function init() {
 
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-shell').style.display = 'flex';
+  updateUserDisplay();
 
   setupEventListeners();
   await loadInitialData();
@@ -150,6 +159,7 @@ async function handleLoginSubmit(e) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-shell').style.display = 'flex';
     localStorage.setItem('cmes_user', JSON.stringify(state.currentUser));
+    updateUserDisplay();
 
     await loadInitialData();
     switchView('dashboard');
@@ -167,10 +177,7 @@ function switchUser(userIndex) {
   const user = USERS[userIndex];
   if (!user) return;
   state.currentUser = { ...state.currentUser, name: user.name, role: user.role, department: user.dept };
-
-  document.getElementById('active-user-badge').textContent = user.role;
-  document.getElementById('dash-username').textContent = user.name;
-  document.getElementById('dash-role').textContent = user.role;
+  updateUserDisplay();
 
   renderDashboard();
   renderQueue();
@@ -1048,7 +1055,7 @@ async function downloadPdfReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     doc.setFontSize(16);
-    doc.text('CMES Requisitions Report', 14, 18);
+    doc.text('EazyTools Zambia Requisitions Report', 14, 18);
     doc.setFontSize(9);
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 24);
     doc.text(`Sorted by Branch/Department & Status`, 14, 29);
