@@ -1613,7 +1613,27 @@ main {
   }
 }
 
-.admin-stats-grid {
+.admin-user-modal-content {
+  max-width: 640px !important;
+  display: block !important;
+  padding: 32px;
+}
+.admin-user-modal-content h3 {
+  font-family: var(--font-headings);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.admin-user-modal-content .form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .admin-user-modal-content .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
