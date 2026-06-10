@@ -153,8 +153,13 @@ function setupEventListeners() {
     });
   }
   document.getElementById('sidebar-collapse-btn').addEventListener('click', () => {
-    document.querySelector('aside').classList.toggle('collapsed');
+    const aside = document.querySelector('aside');
+    aside.classList.toggle('collapsed');
+    localStorage.setItem('sidebar_collapsed', aside.classList.contains('collapsed'));
   });
+  if (localStorage.getItem('sidebar_collapsed') === 'true') {
+    document.querySelector('aside').classList.add('collapsed');
+  }
 }
 
 // --- Login Handler ---
