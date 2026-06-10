@@ -176,4 +176,41 @@ async function getAllRequisitions(req, res) {
   }
 }
 
-module.exports = { getStats, listUsers, createUser, updateUser, resetPassword, getAllRequisitions };
+async function downloadReport(req, res) {
+  try {
+    const result = await query(`
+      SELECT r.req_id, r.title, r.type, r.department, r.currency, r.total_amount,
+             r.status, r.created_at, r.updated_at, r.rejection_reason,
+             u.name as requestor_name, u.email as requestor_email
+      FROM requisitions r
+      JOIN users u ON r.requestor_id = u.id
+      ORDER BY r.department, r.status, r.req_id
+    `);
+
+    const rows = result.rows;
+    const esc = (v) => {
+      const s = String(v == null ? '' : v);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+
+    const header = 'Req ID,Title,Type,Branch/Department,Currency,Amount,Status,Requestor,Requestor Email,Created,Updated,Rejection Reason';
+    const csvLines = rows.map(r =>
+      [r.req_id, r.title, r.type, r.department, r.currency, r.total_amount,
+       r.status, r.requestor_name, r.requestor_email,
+       r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : '',
+       r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : '',
+       r.rejection_reason || ''].map(esc).join(',')
+    );
+
+    const csv = '\uFEFF' + header + '\n' + csvLines.join('\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="cmes-requisitions-report-${dateStr}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    console.error('Admin report error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { getStats, listUsers, createUser, updateUser, resetPassword, getAllRequisitions, downloadReport };

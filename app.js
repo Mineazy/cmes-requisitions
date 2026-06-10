@@ -834,6 +834,7 @@ async function renderAdminPanel() {
   document.getElementById('admin-req-status-filter').onchange = adminFetchRequisitions;
   document.getElementById('admin-req-refresh').onclick = adminFetchRequisitions;
   document.getElementById('admin-add-user-btn').onclick = () => openAdminUserModal();
+  document.getElementById('admin-download-report').onclick = downloadReport;
 }
 
 function debounce(fn, delay) {
@@ -990,6 +991,33 @@ function escHtml(str) {
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
+}
+
+async function downloadReport() {
+  const btn = document.getElementById('admin-download-report');
+  try {
+    btn.disabled = true;
+    btn.innerHTML = 'Downloading...';
+    const res = await fetch(`${API_BASE}/admin/report`, {
+      headers: state.token ? { 'Authorization': `Bearer ${state.token}` } : {}
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cmes-requisitions-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToastNotification('Report downloaded successfully');
+  } catch (err) {
+    showToastNotification('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download Report';
+  }
 }
 
 // --- Globals for HTML onclick ---
