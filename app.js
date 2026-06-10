@@ -174,7 +174,9 @@ async function handleLoginSubmit(e) {
     localStorage.setItem('cmes_user', JSON.stringify(state.currentUser));
     updateUserDisplay();
 
+    setupEventListeners();
     await loadInitialData();
+    document.getElementById('nav-admin').style.display = state.currentUser.role === 'Admin' ? '' : 'none';
     switchView('dashboard');
   } catch (err) {
     errorEl.textContent = err.message;
@@ -191,6 +193,8 @@ function switchUser(userIndex) {
   if (!user) return;
   state.currentUser = { ...state.currentUser, name: user.name, role: user.role, department: user.dept };
   updateUserDisplay();
+  const adminNav = document.getElementById('nav-admin');
+  if (adminNav) adminNav.style.display = state.currentUser.role === 'Admin' ? '' : 'none';
 
   renderDashboard();
   renderQueue();
