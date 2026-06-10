@@ -818,15 +818,16 @@ main {
 .approval-flow-step {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 4px;
+  font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-muted);
-  padding: 4px 10px;
-  border-radius: 20px;
+  padding: 3px 8px;
+  border-radius: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .approval-flow-step .step-dot {
   width: 8px;
@@ -846,8 +847,9 @@ main {
 }
 .approval-flow-arrow {
   color: var(--border-color-hover);
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   flex-shrink: 0;
+  margin: 0 -1px;
 }
 
 .btn-secondary {
