@@ -152,6 +152,9 @@ function setupEventListeners() {
       });
     });
   }
+  document.getElementById('sidebar-collapse-btn').addEventListener('click', () => {
+    document.querySelector('aside').classList.toggle('collapsed');
+  });
 }
 
 // --- Login Handler ---

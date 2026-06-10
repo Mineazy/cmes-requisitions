@@ -185,6 +185,54 @@ aside {
   flex-direction: column;
   padding: 24px 16px;
   justify-content: space-between;
+  transition: width 0.3s ease, padding 0.3s ease;
+  position: relative;
+}
+
+/* Collapsed sidebar */
+aside.collapsed {
+  width: 56px;
+  padding: 24px 6px;
+}
+aside.collapsed .nav-label {
+  display: none;
+}
+aside.collapsed .nav-item button {
+  justify-content: center;
+  padding: 12px 0;
+}
+aside.collapsed .sidebar-footer {
+  display: none;
+}
+aside.collapsed .sidebar-collapse-btn {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
+}
+.sidebar-collapse-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  position: absolute;
+  bottom: 16px;
+  right: 12px;
+  transition: var(--transition-smooth);
+}
+.sidebar-collapse-btn:hover {
+  color: var(--copper-light);
+  border-color: var(--copper-dark);
+}
+.sidebar-collapse-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .nav-links {
