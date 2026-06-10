@@ -789,9 +789,8 @@ main {
 .approval-flow-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px 0;
-  border-top: 1px solid var(--border-color);
+  gap: 12px;
+  padding: 10px 0;
 }
 .approval-flow-label {
   font-size: 0.8rem;
@@ -803,8 +802,18 @@ main {
 .approval-flow-steps {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 2px;
+  overflow-x: auto;
+  flex-shrink: 1;
+  min-width: 0;
+  padding-bottom: 2px;
+}
+.approval-flow-steps::-webkit-scrollbar {
+  height: 3px;
+}
+.approval-flow-steps::-webkit-scrollbar-thumb {
+  background: var(--border-color-hover);
+  border-radius: 3px;
 }
 .approval-flow-step {
   display: flex;
