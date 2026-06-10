@@ -786,6 +786,61 @@ main {
   gap: 16px;
 }
 
+.approval-flow-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-color);
+}
+.approval-flow-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.approval-flow-steps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.approval-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.approval-flow-step .step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.approval-flow-step.active .step-dot {
+  background: var(--copper-light);
+  box-shadow: 0 0 6px var(--copper-glow);
+}
+.approval-flow-step.active {
+  color: var(--text-primary);
+  border-color: var(--copper-dark);
+  background: rgba(227, 118, 34, 0.08);
+}
+.approval-flow-arrow {
+  color: var(--border-color-hover);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
 .btn-secondary {
   background-color: transparent;
   border: 1px solid var(--border-color);

@@ -139,6 +139,7 @@ function setupEventListeners() {
       if (view) switchView(view);
     });
   });
+  document.getElementById('req-type').addEventListener('change', renderApprovalFlow);
 }
 
 // --- Login Handler ---
@@ -202,6 +203,7 @@ function switchView(viewName) {
     } else {
       document.getElementById('create-req-blocked').style.display = 'none';
       document.getElementById('new-req-form').style.display = 'block';
+      renderApprovalFlow();
     }
   } else if (viewName === 'requisition-queue') {
     document.getElementById('nav-requisitions').classList.add('active');
@@ -812,6 +814,30 @@ function showToastNotification(message) {
   document.body.appendChild(toast);
   setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(-50%) translateY(0)'; }, 50);
   setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(20px)'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
+function renderApprovalFlow() {
+  const typeEl = document.getElementById('req-type');
+  const container = document.getElementById('approval-flow-steps');
+  if (!typeEl || !container) return;
+  const flow = STATUS_FLOW[typeEl.value];
+  if (!flow) { container.innerHTML = ''; return; }
+  const labels = {
+    'Pending': 'Created',
+    '1st Approver stage': '1st Approval',
+    '2nd Approver Stage': '2nd Approval',
+    '3rd Approver Stage': '3rd Approval',
+    'Final Approver': 'Final Approval',
+    'Pending Disbursement': 'Disburse',
+    'Issued': 'Issued',
+    'Change Returned/Pending': 'Receipts',
+    'Change Cleared': 'Cleared'
+  };
+  container.innerHTML = flow.map((stage, i) => {
+    const step = `<span class="approval-flow-step"><span class="step-dot"></span>${labels[stage] || stage}</span>`;
+    const arrow = i < flow.length - 1 ? `<span class="approval-flow-arrow">\u25B6</span>` : '';
+    return step + arrow;
+  }).join('');
 }
 
 // --- Admin Panel ---
