@@ -866,8 +866,14 @@ function renderApprovalFlow() {
     'Change Returned/Pending': 'Receipts',
     'Change Cleared': 'Cleared'
   };
+  const ROLE_INITIALS = {
+    '1st Approver': '1A','2nd Approver': '2A','3rd Approver': '3A',
+    'Final Approver': 'FA','Treasurer': 'T','Requestor': 'CR'
+  };
   container.innerHTML = flow.map((stage, i) => {
-    const step = `<span class="approval-flow-step"><span class="step-dot"></span>${labels[stage] || stage}</span>`;
+    const actor = STATUS_ACTOR_MAP[stage];
+    const initials = ROLE_INITIALS[actor] || (actor ? actor.charAt(0) : '?');
+    const step = `<span class="approval-flow-step"><span class="approval-avatar" data-role="${actor || ''}">${initials}</span><span>${labels[stage] || stage}</span></span>`;
     const arrow = i < flow.length - 1 ? `<span class="approval-flow-arrow">\u25B6</span>` : '';
     return step + arrow;
   }).join('');
