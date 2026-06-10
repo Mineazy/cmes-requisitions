@@ -1159,6 +1159,7 @@ window.processRequestorSubmitReceipts = processRequestorSubmitReceipts;
 window.closeVerificationModal = closeVerificationModal;
 window.viewSignatureVerification = viewSignatureVerification;
 window.logout = logout;
+window.renderApprovalFlow = renderApprovalFlow;
 window.openAdminUserModal = openAdminUserModal;
 window.closeAdminUserModal = closeAdminUserModal;
 window.adminResetPassword = adminResetPassword;
