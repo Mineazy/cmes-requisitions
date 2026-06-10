@@ -140,6 +140,17 @@ function setupEventListeners() {
     });
   });
   document.getElementById('req-type').addEventListener('change', renderApprovalFlow);
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+      document.querySelector('aside').classList.toggle('mobile-open');
+    });
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelector('aside').classList.remove('mobile-open');
+      });
+    });
+  }
 }
 
 // --- Login Handler ---
