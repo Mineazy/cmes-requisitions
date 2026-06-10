@@ -140,6 +140,7 @@ function setupEventListeners() {
     });
   });
   document.getElementById('req-type').addEventListener('change', renderApprovalFlow);
+  document.getElementById('req-currency').addEventListener('change', updateCurrencyDisplay);
   const menuBtn = document.getElementById('mobile-menu-btn');
   if (menuBtn) {
     menuBtn.addEventListener('click', () => {
@@ -383,9 +384,28 @@ function changeQueueFilter(filterType) {
 }
 
 // --- Form ---
+function getCurrencySymbol() {
+  const el = document.getElementById('req-currency');
+  return el && el.value === 'USD' ? '$' : 'K';
+}
+
+function updateCurrencyDisplay() {
+  const sym = getCurrencySymbol();
+  document.querySelectorAll('.item-row').forEach(row => {
+    const hint = row.querySelector('.item-currency-hint');
+    if (hint) hint.textContent = sym;
+    const sub = row.querySelector('.item-subtotal');
+    if (sub) {
+      const num = parseFloat(sub.value.replace(/[^0-9.]/g, '')) || 0;
+      sub.value = `${sym}${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    }
+  });
+  calculateFormTotal();
+}
+
 function addFormItemRow() {
   const container = document.getElementById('items-rows-container');
-  const symbol = 'K';
+  const symbol = getCurrencySymbol();
   const rowId = `item_row_${Date.now()}`;
   container.insertAdjacentHTML('beforeend', `<div class="item-row" id="${rowId}">
     <div class="form-group"><div class="item-row-header">Description</div>
@@ -413,7 +433,8 @@ window.calculateRowSubtotal = function(rowId) {
   const row = document.getElementById(rowId);
   const qty = parseInt(row.querySelector('.item-qty').value) || 0;
   const price = parseFloat(row.querySelector('.item-price').value) || 0;
-  row.querySelector('.item-subtotal').value = `K${(qty * price).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const sym = getCurrencySymbol();
+  row.querySelector('.item-subtotal').value = `${sym}${(qty * price).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   calculateFormTotal();
 };
 
@@ -424,7 +445,8 @@ function calculateFormTotal() {
     const price = parseFloat(row.querySelector('.item-price').value) || 0;
     total += qty * price;
   });
-  document.getElementById('form-calculated-total').textContent = `K${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const sym = getCurrencySymbol();
+  document.getElementById('form-calculated-total').textContent = `${sym}${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 }
 
 function removeFormItemRow(rowId) {
