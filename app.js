@@ -74,6 +74,7 @@ function isAuthenticated() {
 
 // --- Init ---
 async function init() {
+  document.getElementById('login-form').addEventListener('submit', handleLoginSubmit);
   await loadUserFromToken();
   if (!isAuthenticated()) {
     document.getElementById('login-screen').style.display = 'flex';
@@ -128,7 +129,6 @@ function setupEventListeners() {
       if (view) switchView(view);
     });
   });
-  document.getElementById('login-form').addEventListener('submit', handleLoginSubmit);
 }
 
 // --- Login Handler ---
