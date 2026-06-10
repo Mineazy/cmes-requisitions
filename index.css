@@ -2029,9 +2029,10 @@ main {
 }
 
 .admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
 }
 .admin-user-table th {
   text-align: left;
