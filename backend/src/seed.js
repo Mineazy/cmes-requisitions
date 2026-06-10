@@ -44,7 +44,7 @@ async function seed() {
     const existingReqs = await query('SELECT COUNT(*) FROM requisitions');
     if (parseInt(existingReqs.rows[0].count) > 0) {
       console.log('Requisitions already seeded, skipping...');
-      process.exit(0);
+      return { users: USERS };
     }
 
     console.log('Seeding sample requisitions...');
