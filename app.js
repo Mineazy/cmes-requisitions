@@ -3,12 +3,12 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   : '/api';
 
 const USERS = [
-  { name: 'Chansa Mwape', role: 'Requestor', email: 'chansa.mwape@copperbeltmining.co.zm', dept: 'Logistics & Stores - Kitwe' },
-  { name: 'Mutale Chilufya', role: '1st Approver', email: 'mutale.chilufya@copperbeltmining.co.zm', dept: 'Administration - Ndola Head Office' },
-  { name: 'Kondwelani Banda', role: '2nd Approver', email: 'kondwelani.banda@copperbeltmining.co.zm', dept: 'Operations - Solwezi Mine Hub' },
-  { name: 'Sibongile Phiri', role: '3rd Approver', email: 'sibongile.phiri@copperbeltmining.co.zm', dept: 'Operations - Solwezi Mine Hub' },
-  { name: 'Mwansa Kabwe', role: 'Final Approver', email: 'mwansa.kabwe@copperbeltmining.co.zm', dept: 'Administration - Ndola Head Office' },
-  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Finance - Lusaka Headquarters' }
+  { name: 'Chansa Mwape', role: 'Requestor', email: 'chansa.mwape@copperbeltmining.co.zm', dept: 'Chaisa' },
+  { name: 'Mutale Chilufya', role: '1st Approver', email: 'mutale.chilufya@copperbeltmining.co.zm', dept: 'Mumba' },
+  { name: 'Kondwelani Banda', role: '2nd Approver', email: 'kondwelani.banda@copperbeltmining.co.zm', dept: 'Mpika' },
+  { name: 'Sibongile Phiri', role: '3rd Approver', email: 'sibongile.phiri@copperbeltmining.co.zm', dept: 'Mpika' },
+  { name: 'Mwansa Kabwe', role: 'Final Approver', email: 'mwansa.kabwe@copperbeltmining.co.zm', dept: 'Chaisa' },
+  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Mumba' }
 ];
 
 const STATUS_FLOW = {

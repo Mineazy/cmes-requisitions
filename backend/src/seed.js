@@ -4,12 +4,12 @@ const { query, initializeDatabase } = require('./config/database');
 const crypto = require('crypto');
 
 const USERS = [
-  { name: 'Chansa Mwape', role: 'Requestor', email: 'chansa.mwape@copperbeltmining.co.zm', dept: 'Logistics & Stores - Kitwe', password: 'password123' },
-  { name: 'Mutale Chilufya', role: '1st Approver', email: 'mutale.chilufya@copperbeltmining.co.zm', dept: 'Administration - Ndola Head Office', password: 'password123' },
-  { name: 'Kondwelani Banda', role: '2nd Approver', email: 'kondwelani.banda@copperbeltmining.co.zm', dept: 'Operations - Solwezi Mine Hub', password: 'password123' },
-  { name: 'Sibongile Phiri', role: '3rd Approver', email: 'sibongile.phiri@copperbeltmining.co.zm', dept: 'Operations - Solwezi Mine Hub', password: 'password123' },
-  { name: 'Mwansa Kabwe', role: 'Final Approver', email: 'mwansa.kabwe@copperbeltmining.co.zm', dept: 'Administration - Ndola Head Office', password: 'password123' },
-  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Finance - Lusaka Headquarters', password: 'password123' },
+  { name: 'Chansa Mwape', role: 'Requestor', email: 'chansa.mwape@copperbeltmining.co.zm', dept: 'Chaisa', password: 'password123' },
+  { name: 'Mutale Chilufya', role: '1st Approver', email: 'mutale.chilufya@copperbeltmining.co.zm', dept: 'Mumba', password: 'password123' },
+  { name: 'Kondwelani Banda', role: '2nd Approver', email: 'kondwelani.banda@copperbeltmining.co.zm', dept: 'Mpika', password: 'password123' },
+  { name: 'Sibongile Phiri', role: '3rd Approver', email: 'sibongile.phiri@copperbeltmining.co.zm', dept: 'Mpika', password: 'password123' },
+  { name: 'Mwansa Kabwe', role: 'Final Approver', email: 'mwansa.kabwe@copperbeltmining.co.zm', dept: 'Chaisa', password: 'password123' },
+  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Mumba', password: 'password123' },
   { name: 'Lungowe Mwila', role: 'Admin', email: 'lungowe.mwila@copperbeltmining.co.zm', dept: 'IT & Systems - Ndola Head Office', password: 'password123' }
 ];
 
@@ -53,7 +53,7 @@ async function seed() {
     // REQ-0001: Admin - IT Upgrades (at 2nd Approver Stage)
     const req1 = await createRequisition({
       reqId: 'REQ-2026-0001', type: 'Admin', title: 'Kitwe Headquarters IT Upgrades',
-      department: 'Administration - Ndola Head Office', requestorId: chansa.id,
+      department: 'Chaisa', requestorId: chansa.id,
       currency: 'ZMW', totalAmount: 62500,
       items: [
         { desc: 'Business Laptops (Core i7, 16GB)', cat: 'Office Admin', qty: 3, price: 18500 },
@@ -70,7 +70,7 @@ async function seed() {
     // REQ-0002: Shop Use - Drill Bits (at 1st Approver stage)
     const req2 = await createRequisition({
       reqId: 'REQ-2026-0002', type: 'Shop Use', title: 'Diamond-Core Drill Bits replenishment',
-      department: 'Operations - Solwezi Mine Hub', requestorId: chansa.id,
+      department: 'Mpika', requestorId: chansa.id,
       currency: 'USD', totalAmount: 14200,
       items: [
         { desc: 'Sandvik 46mm Diamond Drill Bits', cat: 'Drills & Tools', qty: 20, price: 650 },
@@ -86,7 +86,7 @@ async function seed() {
     // REQ-0003: Admin - PPE (at Change Returned/Pending)
     const req3 = await createRequisition({
       reqId: 'REQ-2026-0003', type: 'Admin', title: 'Warehouse Safety Gear & PPE Stocking',
-      department: 'Logistics & Stores - Kitwe', requestorId: chansa.id,
+      department: 'Mumba', requestorId: chansa.id,
       currency: 'ZMW', totalAmount: 18750,
       items: [
         { desc: 'Heavy Duty Steel-toe Boots', cat: 'Safety Wear (PPE)', qty: 15, price: 850 },
@@ -108,7 +108,7 @@ async function seed() {
     // REQ-0004: Shop Use - Rejected
     const req4 = await createRequisition({
       reqId: 'REQ-2026-0004', type: 'Shop Use', title: 'Solwezi Site Hydraulic Pump Seal Kit',
-      department: 'Operations - Solwezi Mine Hub', requestorId: chansa.id,
+      department: 'Mpika', requestorId: chansa.id,
       currency: 'ZMW', totalAmount: 9400,
       rejectReason: 'Incorrect kit serial number specified for the Komatsu PC2000 excavators.',
       items: [
@@ -124,7 +124,7 @@ async function seed() {
     // REQ-0005: Admin - Stationery (Change Cleared)
     const req5 = await createRequisition({
       reqId: 'REQ-2026-0005', type: 'Admin', title: 'Ndola Office Stationery & Consumables',
-      department: 'Administration - Ndola Head Office', requestorId: chansa.id,
+      department: 'Chaisa', requestorId: chansa.id,
       currency: 'ZMW', totalAmount: 4300,
       items: [
         { desc: 'A4 Laser Printing Paper cartons', cat: 'Office Admin', qty: 5, price: 650 },
