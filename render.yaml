@@ -4,7 +4,7 @@ services:
     runtime: node
     rootDir: backend
     repo: https://github.com/Mineazy/cmes-requisitions
-    branch: main
+    branch: master
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
