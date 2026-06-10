@@ -198,28 +198,26 @@
             <h3 style="color:var(--text-primary);margin-bottom:8px;">Access Restricted</h3>
             <p style="color:var(--text-secondary);">Only users with the <strong>Requestor</strong> role can create new requisitions. Use the role switcher above to change to a Requestor.</p>
           </div>
-          <div class="glass-panel form-card">
-            <form id="new-req-form" onsubmit="window.handleFormSubmit(event)">
-              <div class="form-grid-2">
-                <div class="form-group"><label for="req-title">Requisition Subject / Title</label><input type="text" id="req-title" required placeholder="e.g. Spare Diamond bits for Sandvik drills"></div>
-                <div class="form-group"><label for="req-type">Requisition Type</label><select id="req-type" required><option value="Admin">Admin Requisition (4 Approvers)</option><option value="Shop Use">Shop Use Requisition (2 Approvers)</option></select></div>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group"><label for="req-department">Department / Branch</label><select id="req-department" required><option value="Logistics & Stores - Kitwe">Logistics & Stores - Kitwe</option><option value="Operations - Solwezi Mine Hub">Operations - Solwezi Mine Hub</option><option value="Heavy Machinery Retail - Lusaka">Heavy Machinery Retail - Lusaka</option><option value="Administration - Ndola Head Office">Administration - Ndola Head Office</option></select></div>
-                <div class="form-group"><label for="req-currency">Requisition Currency</label><select id="req-currency" required><option value="ZMW">ZMW - Zambian Kwacha (K)</option><option value="USD">USD - United States Dollar ($)</option></select></div>
-              </div>
-              <div class="items-creator-block">
-                <div class="items-creator-title"><span>Required Items & Consumables</span><button type="button" class="action-btn-sm" onclick="window.addFormItemRow()">+ Add Item Row</button></div>
-                <div id="items-rows-container"></div>
-              </div>
-              <div class="form-total-bar"><span style="color:var(--text-secondary);font-size:0.95rem;">Total Request Amount:</span><span id="form-calculated-total" style="color:var(--copper-light);">K0.00</span></div>
-              <div class="approval-flow-row" id="approval-flow-row">
-                <div class="approval-flow-label">Approval Chain:</div>
-                <div class="approval-flow-steps" id="approval-flow-steps"></div>
-              </div>
-              <div class="submit-btn-group"><button type="button" class="btn-secondary" onclick="window.switchView('dashboard')">Cancel</button><button type="submit" class="btn-primary">Submit Requisition</button></div>
-            </form>
-          </div>
+          <form id="new-req-form" onsubmit="window.handleFormSubmit(event)" class="create-req-form">
+            <div class="form-grid-2">
+              <div class="form-group"><label for="req-title">Requisition Subject / Title</label><input type="text" id="req-title" required placeholder="e.g. Spare Diamond bits for Sandvik drills"></div>
+              <div class="form-group"><label for="req-type">Requisition Type</label><select id="req-type" required><option value="Admin">Admin Requisition (4 Approvers)</option><option value="Shop Use">Shop Use Requisition (2 Approvers)</option></select></div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group"><label for="req-department">Department / Branch</label><select id="req-department" required><option value="Logistics & Stores - Kitwe">Logistics & Stores - Kitwe</option><option value="Operations - Solwezi Mine Hub">Operations - Solwezi Mine Hub</option><option value="Heavy Machinery Retail - Lusaka">Heavy Machinery Retail - Lusaka</option><option value="Administration - Ndola Head Office">Administration - Ndola Head Office</option></select></div>
+              <div class="form-group"><label for="req-currency">Requisition Currency</label><select id="req-currency" required><option value="ZMW">ZMW - Zambian Kwacha (K)</option><option value="USD">USD - United States Dollar ($)</option></select></div>
+            </div>
+            <div class="items-creator-block">
+              <div class="items-creator-title"><span>Required Items & Consumables</span><button type="button" class="action-btn-sm" onclick="window.addFormItemRow()">+ Add Item Row</button></div>
+              <div id="items-rows-container"></div>
+            </div>
+            <div class="form-total-bar"><span style="color:var(--text-secondary);font-size:0.95rem;">Total Request Amount:</span><span id="form-calculated-total" style="color:var(--copper-light);">K0.00</span></div>
+            <div class="approval-flow-row" id="approval-flow-row">
+              <div class="approval-flow-label">Approval Chain:</div>
+              <div class="approval-flow-steps" id="approval-flow-steps"></div>
+            </div>
+            <div class="submit-btn-group"><button type="button" class="btn-secondary" onclick="window.switchView('dashboard')">Cancel</button><button type="submit" class="btn-primary">Submit Requisition</button></div>
+          </form>
         </div>
 
         <!-- VIEW: REQUISITION QUEUE -->

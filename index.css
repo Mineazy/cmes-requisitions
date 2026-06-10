@@ -641,6 +641,13 @@ main {
   margin: 0 auto;
 }
 
+.create-req-form {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 28px;
+}
+
 .form-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
