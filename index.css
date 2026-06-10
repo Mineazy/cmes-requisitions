@@ -1613,34 +1613,44 @@ main {
   }
 }
 
-.admin-user-modal-content {
-  max-width: 640px !important;
-  display: block !important;
+.admin-modal {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
   padding: 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border-top: 4px solid var(--copper);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
 }
-.admin-user-modal-content h3 {
-  font-family: var(--font-headings);
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 8px;
+.admin-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
 }
-.admin-user-modal-content .form-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 600px) {
-  .admin-user-modal-content .form-grid-2 {
-    grid-template-columns: 1fr;
-  }
-}
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+.admin-modal-close:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--copper);
 }
 
-.admin-user-table {
+.admin-stats-grid {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
