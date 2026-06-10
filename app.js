@@ -834,7 +834,8 @@ async function renderAdminPanel() {
   document.getElementById('admin-req-status-filter').onchange = adminFetchRequisitions;
   document.getElementById('admin-req-refresh').onclick = adminFetchRequisitions;
   document.getElementById('admin-add-user-btn').onclick = () => openAdminUserModal();
-  document.getElementById('admin-download-report').onclick = downloadReport;
+  document.getElementById('admin-download-csv').onclick = downloadCsvReport;
+  document.getElementById('admin-download-pdf').onclick = downloadPdfReport;
 }
 
 function debounce(fn, delay) {
@@ -993,11 +994,11 @@ function escHtml(str) {
   return div.innerHTML;
 }
 
-async function downloadReport() {
-  const btn = document.getElementById('admin-download-report');
+async function downloadCsvReport() {
+  const btn = document.getElementById('admin-download-csv');
   try {
     btn.disabled = true;
-    btn.innerHTML = 'Downloading...';
+    btn.textContent = 'Downloading...';
     const res = await fetch(`${API_BASE}/admin/report`, {
       headers: state.token ? { 'Authorization': `Bearer ${state.token}` } : {}
     });
@@ -1011,12 +1012,65 @@ async function downloadReport() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToastNotification('Report downloaded successfully');
+    showToastNotification('CSV report downloaded');
   } catch (err) {
     showToastNotification('Error: ' + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download Report';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> CSV Report';
+  }
+}
+
+async function downloadPdfReport() {
+  const btn = document.getElementById('admin-download-pdf');
+  try {
+    btn.disabled = true;
+    btn.textContent = 'Generating PDF...';
+    const res = await fetch(`${API_BASE}/admin/report`, {
+      headers: state.token ? { 'Authorization': `Bearer ${state.token}` } : {}
+    });
+    if (!res.ok) throw new Error('Failed to fetch report data');
+    const text = await res.text();
+    const lines = text.split('\n').filter(Boolean);
+    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, ''));
+    const data = lines.slice(1).map(line => {
+      const vals = [];
+      let cur = '', inQuotes = false;
+      for (const ch of line) {
+        if (ch === '"') { inQuotes = !inQuotes; continue; }
+        if (ch === ',' && !inQuotes) { vals.push(cur.replace(/""/g, '"')); cur = ''; continue; }
+        cur += ch;
+      }
+      vals.push(cur.replace(/""/g, '"'));
+      return vals;
+    });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setFontSize(16);
+    doc.text('CMES Requisitions Report', 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 24);
+    doc.text(`Sorted by Branch/Department & Status`, 14, 29);
+
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 34,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [227, 118, 34], fontSize: 7, halign: 'center' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 34 }
+    });
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    doc.save(`cmes-requisitions-report-${dateStr}.pdf`);
+    showToastNotification('PDF report downloaded');
+  } catch (err) {
+    showToastNotification('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> PDF Report';
   }
 }
 

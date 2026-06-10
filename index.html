@@ -7,6 +7,8 @@
   <meta name="description" content="Requisitions Management System for Copperbelt Mining & Equipment Supplies (CMES) Ltd. Manage Admin and Shop Use requisitions across approval chains.">
   <link rel="stylesheet" href="index.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 
@@ -227,10 +229,16 @@
         <div id="view-admin-panel" class="view-panel">
           <div class="view-title-block">
             <div><h2>System Administration</h2><p>Manage users, monitor system activity, and oversee all requisitions.</p></div>
-            <button class="btn-primary" id="admin-download-report" style="font-size:0.8rem;padding:8px 16px;white-space:nowrap;">
-              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              Download Report
-            </button>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-primary" id="admin-download-csv" style="font-size:0.8rem;padding:8px 16px;white-space:nowrap;background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                CSV Report
+              </button>
+              <button class="btn-primary" id="admin-download-pdf" style="font-size:0.8rem;padding:8px 16px;white-space:nowrap;">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                PDF Report
+              </button>
+            </div>
           </div>
           <div class="admin-stats-grid" id="admin-stats-grid">
             <div class="metric-card copper-accent">
@@ -337,7 +345,7 @@
 
     <!-- MODAL: ADMIN USER -->
     <div class="modal-overlay" id="admin-user-modal">
-      <div class="modal-content" style="max-width:480px;">
+      <div class="modal-content" style="max-width:560px;">
         <button class="modal-close-btn" onclick="window.closeAdminUserModal()" title="Close">&times;</button>
         <h3 id="admin-user-modal-title">Add User</h3>
         <form id="admin-user-form" style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
