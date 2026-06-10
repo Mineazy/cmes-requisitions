@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg-primary: #0B0F19;
-  --bg-secondary: #111827;
-  --bg-card: #1E293B;
-  --bg-card-hover: #243148;
+  --bg-primary: #060D1A;
+  --bg-secondary: #0A1628;
+  --bg-card: #0F1E38;
+  --bg-card-hover: #162948;
   --border-color: rgba(255, 255, 255, 0.06);
   --border-color-hover: rgba(255, 255, 255, 0.12);
   
@@ -23,8 +23,8 @@
   --ruby-glow: rgba(239, 68, 68, 0.15);
   
   --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-secondary: #8BB8E0;
+  --text-muted: #5A7FA8;
   
   /* Sidebar Width */
   --sidebar-width: 260px;
@@ -133,7 +133,7 @@ header {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: rgba(30, 41, 59, 0.4);
+  background: rgba(15, 30, 56, 0.4);
   padding: 6px 12px 6px 16px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
@@ -693,7 +693,7 @@ main {
 /* Itemized Line Creator */
 .items-creator-block {
   border: 1px solid var(--border-color);
-  background: rgba(15, 23, 42, 0.3);
+  background: rgba(10, 22, 40, 0.3);
   border-radius: 12px;
   padding: 20px;
   margin-top: 10px;
@@ -923,7 +923,7 @@ main {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(11, 15, 25, 0.85);
+  background-color: rgba(6, 13, 26, 0.85);
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: none;
@@ -1076,7 +1076,7 @@ main {
 
 /* Action Control Center inside Modal */
 .modal-actions-panel {
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(15, 30, 56, 0.5);
   border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 20px;
@@ -1151,7 +1151,7 @@ main {
 /* Modal Right Pane (Stepper Flow & QR Authenticity) */
 .modal-right {
   padding: 32px;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: rgba(10, 22, 40, 0.4);
 }
 
 .modal-right-section {
