@@ -106,9 +106,22 @@ async function initializeDatabase() {
       timestamp TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      user_name VARCHAR(255) NOT NULL,
+      user_role VARCHAR(50) NOT NULL,
+      action VARCHAR(100) NOT NULL,
+      entity_type VARCHAR(50),
+      entity_id VARCHAR(50),
+      details TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_requisitions_status ON requisitions(status);
     CREATE INDEX IF NOT EXISTS idx_requisitions_requestor ON requisitions(requestor_id);
     CREATE INDEX IF NOT EXISTS idx_approvals_requisition ON approvals(requisition_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
   `;
 
   await query(schema);

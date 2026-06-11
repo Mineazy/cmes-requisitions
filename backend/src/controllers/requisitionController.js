@@ -3,6 +3,7 @@ const { STATUS_FLOW, STATUS_ACTOR_MAP } = require('../utils/constants');
 const { generateReqId, formatTimestamp, currencySymbol } = require('../utils/helpers');
 const cryptoService = require('../services/cryptoService');
 const emailService = require('../services/emailService');
+const { logAudit } = require('../services/auditService');
 
 // List requisitions with filters
 async function list(req, res) {
@@ -152,6 +153,12 @@ async function create(req, res) {
       message: `Requisition ${reqId} created successfully`,
       requisition: { ...r, items }
     });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'CREATE_REQUISITION', entityType: 'requisition', entityId: reqId,
+      details: `Created ${type} requisition "${title}" (${currency} ${totalAmount})`
+    });
   } catch (err) {
     console.error('Create requisition error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -216,7 +223,15 @@ async function processApproval(req, res) {
       requisition.status = 'Rejected';
       await emailService.notifyRejection(requisition);
 
-      return res.json({ message: `Requisition ${reqId} rejected`, status: 'Rejected' });
+      res.json({ message: `Requisition ${reqId} rejected`, status: 'Rejected' });
+
+      logAudit({
+        userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+        action: 'REJECT_REQUISITION', entityType: 'requisition', entityId: reqId,
+        details: `Rejected "${requisition.title}" - ${reason}`
+      });
+
+      return;
     }
 
     // Approve
@@ -260,6 +275,12 @@ async function processApproval(req, res) {
       status: nextState,
       signature: sig
     });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'APPROVE_REQUISITION', entityType: 'requisition', entityId: reqId,
+      details: `Approved "${requisition.title}" → ${nextState}`
+    });
   } catch (err) {
     console.error('Approval error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -301,6 +322,12 @@ async function queueDisbursement(req, res) {
     await emailService.notifyNextApprover(requisition);
 
     res.json({ message: `Requisition ${reqId} queued for disbursement`, status: 'Pending Disbursement' });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'QUEUE_DISBURSEMENT', entityType: 'requisition', entityId: reqId,
+      details: `Queued "${requisition.title}" for disbursement`
+    });
   } catch (err) {
     console.error('Queue disbursement error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -342,6 +369,12 @@ async function disburse(req, res) {
     await emailService.notifyDisbursement(requisition);
 
     res.json({ message: `Funds disbursed for ${reqId}`, status: 'Issued' });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'DISBURSE', entityType: 'requisition', entityId: reqId,
+      details: `Disbursed funds for "${requisition.title}"`
+    });
   } catch (err) {
     console.error('Disburse error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -387,6 +420,12 @@ async function submitReceipts(req, res) {
     await emailService.notifyClearanceRequired(requisition);
 
     res.json({ message: `Expenses filed for ${reqId}`, status: 'Change Returned/Pending' });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'SUBMIT_RECEIPTS', entityType: 'requisition', entityId: reqId,
+      details: `Expenses submitted for "${requisition.title}"`
+    });
   } catch (err) {
     console.error('Submit receipts error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -425,6 +464,12 @@ async function clearRequisition(req, res) {
     );
 
     res.json({ message: `Requisition ${reqId} fully cleared and closed`, status: 'Change Cleared' });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'CLEAR_REQUISITION', entityType: 'requisition', entityId: reqId,
+      details: `Cleared and closed "${requisition.title}"`
+    });
   } catch (err) {
     console.error('Clear error:', err);
     res.status(500).json({ error: 'Internal server error' });

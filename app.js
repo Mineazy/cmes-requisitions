@@ -96,6 +96,7 @@ async function init() {
   setupEventListeners();
   await loadInitialData();
   document.getElementById('nav-admin').style.display = state.currentUser.role === 'Admin' ? '' : 'none';
+  document.getElementById('nav-audit').style.display = state.currentUser.role === 'Admin' ? '' : 'none';
   switchView('dashboard');
 }
 
@@ -185,6 +186,7 @@ async function handleLoginSubmit(e) {
     setupEventListeners();
     await loadInitialData();
     document.getElementById('nav-admin').style.display = state.currentUser.role === 'Admin' ? '' : 'none';
+    document.getElementById('nav-audit').style.display = state.currentUser.role === 'Admin' ? '' : 'none';
     switchView('dashboard');
   } catch (err) {
     errorEl.textContent = err.message;
@@ -203,6 +205,8 @@ function switchUser(userIndex) {
   updateUserDisplay();
   const adminNav = document.getElementById('nav-admin');
   if (adminNav) adminNav.style.display = state.currentUser.role === 'Admin' ? '' : 'none';
+  const auditNav = document.getElementById('nav-audit');
+  if (auditNav) auditNav.style.display = state.currentUser.role === 'Admin' ? '' : 'none';
 
   renderDashboard();
   renderQueue();
@@ -237,6 +241,10 @@ function switchView(viewName) {
     document.getElementById('nav-admin').classList.add('active');
     document.getElementById('view-admin-panel').classList.add('active');
     renderAdminPanel();
+  } else if (viewName === 'audit-trail') {
+    document.getElementById('nav-audit').classList.add('active');
+    document.getElementById('view-audit-trail').classList.add('active');
+    renderAuditTrail();
   }
 }
 
@@ -979,6 +987,7 @@ function renderAdminUsers(users) {
       <td><div class="admin-user-actions">
         <button onclick="window.openAdminUserModal(${u.id})">Edit</button>
         <button onclick="window.adminResetPassword(${u.id})">Reset PW</button>
+        <button class="admin-delete-btn" onclick="window.adminDeleteUser(${u.id}, '${escHtml(u.name)}')">Delete</button>
       </div></td>
     </tr>`).join('')}</tbody>
   </table>`;
@@ -1181,6 +1190,50 @@ window.renderApprovalFlow = renderApprovalFlow;
 window.openAdminUserModal = openAdminUserModal;
 window.closeAdminUserModal = closeAdminUserModal;
 window.adminResetPassword = adminResetPassword;
+window.adminDeleteUser = adminDeleteUser;
+window.renderAuditTrail = renderAuditTrail;
+
+// --- Audit Trail ---
+async function renderAuditTrail() {
+  const container = document.getElementById('audit-log-list');
+  try {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading...</div>';
+    const res = await apiFetch('GET', '/admin/audit-logs?limit=200');
+    const logs = res.logs;
+    if (!logs || logs.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">No audit entries found.</div>';
+      return;
+    }
+    container.innerHTML = `<table class="admin-user-table">
+      <thead><tr>
+        <th>Date/Time</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th><th>Details</th>
+      </tr></thead>
+      <tbody>${logs.map(l => `<tr>
+        <td style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">${new Date(l.created_at).toLocaleString()}</td>
+        <td style="font-weight:500;">${escHtml(l.user_name)}</td>
+        <td><span class="status-badge badge-pending" style="font-size:0.7rem;">${escHtml(l.user_role)}</span></td>
+        <td><span class="audit-action-badge">${escHtml(l.action)}</span></td>
+        <td style="font-size:0.75rem;color:var(--text-secondary);">${l.entity_type ? escHtml(l.entity_type) + (l.entity_id ? ' #' + escHtml(l.entity_id) : '') : '-'}</td>
+        <td style="font-size:0.75rem;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(l.details || '')}">${escHtml(l.details || '-')}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.75rem;">${res.total} total entries (showing latest ${logs.length})</div>`;
+  } catch (err) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ruby);">Failed to load audit trail: ' + err.message + '</div>';
+  }
+}
+
+// --- Delete User ---
+async function adminDeleteUser(userId, userName) {
+  if (!confirm(`Are you sure you want to permanently delete user "${userName}"?\n\nThis action cannot be undone.`)) return;
+  try {
+    await apiFetch('DELETE', '/admin/users/' + userId);
+    showToastNotification(`User "${userName}" deleted successfully`);
+    renderAdminPanel();
+  } catch (err) {
+    showToastNotification('Error: ' + err.message);
+  }
+}
 
 // Start
 document.addEventListener('DOMContentLoaded', init);

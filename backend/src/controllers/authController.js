@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const { query } = require('../config/database');
 const { generateToken } = require('../middleware/auth');
+const { logAudit } = require('../services/auditService');
 
 const SALT_ROUNDS = 12;
 
@@ -35,6 +36,12 @@ async function login(req, res) {
         role: user.role,
         department: user.department
       }
+    });
+
+    logAudit({
+      userId: user.id, userName: user.name, userRole: user.role,
+      action: 'LOGIN', entityType: 'user', entityId: String(user.id),
+      details: `User "${user.name}" logged in`
     });
   } catch (err) {
     console.error('Login error:', err);

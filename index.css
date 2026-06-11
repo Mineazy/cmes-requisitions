@@ -2142,3 +2142,24 @@ main {
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
+
+.admin-delete-btn {
+  color: var(--ruby) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+.admin-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: var(--ruby) !important;
+}
+
+.audit-action-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  white-space: nowrap;
+  font-family: monospace;
+}

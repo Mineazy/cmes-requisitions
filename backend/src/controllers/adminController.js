@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const { query } = require('../config/database');
+const { logAudit, getAuditLogs } = require('../services/auditService');
 
 const SALT_ROUNDS = 12;
 
@@ -66,6 +67,12 @@ async function createUser(req, res) {
     );
 
     res.status(201).json({ user: result.rows[0] });
+
+    await logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'CREATE_USER', entityType: 'user', entityId: String(result.rows[0].id),
+      details: `Created user "${name}" (${role})`
+    });
   } catch (err) {
     console.error('Admin create user error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -102,6 +109,12 @@ async function updateUser(req, res) {
     );
 
     res.json({ user: result.rows[0] });
+
+    await logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'UPDATE_USER', entityType: 'user', entityId: String(userId),
+      details: `Updated user "${name || existing.rows[0].name}"`
+    });
   } catch (err) {
     console.error('Admin update user error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -126,6 +139,12 @@ async function resetPassword(req, res) {
     await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
 
     res.json({ message: 'Password reset successfully' });
+
+    await logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'RESET_PASSWORD', entityType: 'user', entityId: String(userId),
+      details: `Password reset for user ID ${userId}`
+    });
   } catch (err) {
     console.error('Admin reset password error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -207,10 +226,56 @@ async function downloadReport(req, res) {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="cmes-requisitions-report-${dateStr}.csv"`);
     res.send(csv);
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'DOWNLOAD_REPORT', entityType: 'report',
+      details: `Downloaded CSV report (${rows.length} requisitions)`
+    });
   } catch (err) {
     console.error('Admin report error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-module.exports = { getStats, listUsers, createUser, updateUser, resetPassword, getAllRequisitions, downloadReport };
+async function deleteUser(req, res) {
+  try {
+    const userId = req.params.id;
+
+    const existing = await query('SELECT id, name, role FROM users WHERE id = $1', [userId]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (existing.rows[0].role === 'Admin') {
+      return res.status(403).json({ error: 'Cannot delete an Admin user' });
+    }
+
+    await query('DELETE FROM users WHERE id = $1', [userId]);
+
+    await logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'DELETE_USER', entityType: 'user', entityId: String(userId),
+      details: `Deleted user "${existing.rows[0].name}" (${existing.rows[0].role})`
+    });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('Admin delete user error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function getAuditLogsCtrl(req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    const result = await getAuditLogs({ limit, offset });
+    res.json(result);
+  } catch (err) {
+    console.error('Admin audit logs error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { getStats, listUsers, createUser, updateUser, resetPassword, deleteUser, getAllRequisitions, downloadReport, getAuditLogs: getAuditLogsCtrl };
