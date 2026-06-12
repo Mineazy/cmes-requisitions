@@ -155,10 +155,11 @@ function setupEventListeners() {
   }
   document.getElementById('sidebar-collapse-btn').addEventListener('click', () => {
     const aside = document.querySelector('aside');
+    if (window.innerWidth <= 768) return;
     aside.classList.toggle('collapsed');
     localStorage.setItem('sidebar_collapsed', aside.classList.contains('collapsed'));
   });
-  if (localStorage.getItem('sidebar_collapsed') === 'true') {
+  if (window.innerWidth > 768 && localStorage.getItem('sidebar_collapsed') === 'true') {
     document.querySelector('aside').classList.add('collapsed');
   }
 }

@@ -1831,6 +1831,10 @@ main {
   aside.mobile-open {
     display: block;
   }
+  aside .sidebar-collapse-btn,
+  aside .sidebar-footer {
+    display: none !important;
+  }
   #app-container {
     flex-direction: column;
   }
@@ -2012,7 +2016,7 @@ main {
     width: 100%;
     right: -100%;
   }
-  .email-drawer.open {
+  .email-drawer.active {
     right: 0;
   }
   .login-card {
@@ -2038,8 +2042,10 @@ main {
     padding: 20px;
     border-radius: 14px;
   }
-  .admin-user-table th:nth-child(n+5),
-  .admin-user-table td:nth-child(n+5) {
+  .admin-user-table th:nth-child(3),
+  .admin-user-table td:nth-child(3),
+  .admin-user-table th:nth-child(6),
+  .admin-user-table td:nth-child(6) {
     display: none;
   }
   #admin-req-search {
@@ -2091,8 +2097,12 @@ main {
   .stepper-node {
     padding-left: 28px;
   }
-  .admin-user-table th:nth-child(n+4),
-  .admin-user-table td:nth-child(n+4) {
+  .admin-user-table th:nth-child(3),
+  .admin-user-table td:nth-child(3),
+  .admin-user-table th:nth-child(5),
+  .admin-user-table td:nth-child(5),
+  .admin-user-table th:nth-child(6),
+  .admin-user-table td:nth-child(6) {
     display: none;
   }
   #admin-req-search {
@@ -2110,6 +2120,40 @@ main {
   .form-group textarea {
     font-size: 0.8rem;
     padding: 8px 10px;
+  }
+  .queue-pagination {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .queue-pagination button {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+  .modal-table-container {
+    overflow-x: auto;
+  }
+  .modal-table {
+    font-size: 0.7rem;
+  }
+  .modal-table th,
+  .modal-table td {
+    padding: 6px 6px;
+    white-space: nowrap;
+  }
+  .modal-table td:first-child {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .view-title-block {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .approval-flow-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 }
 
