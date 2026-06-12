@@ -1,8 +1,34 @@
 const { query } = require('../config/database');
+const nodemailer = require('nodemailer');
 
-const FROM_EMAIL = 'purchasing-alert@copperbeltmining.co.zm';
-const FINANCE_EMAIL = 'finance@copperbeltmining.co.zm';
-const RECONCILIATION_EMAIL = 'reconciliation@copperbeltmining.co.zm';
+let transporter = null;
+
+function getTransporter() {
+  if (transporter) return transporter;
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'mail.mineazy.co.zw',
+    port: parseInt(process.env.SMTP_PORT) || 465,
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER || 'notifications@mineazy.co.zw',
+      pass: process.env.SMTP_PASS || 'M1n3@zy2026'
+    }
+  });
+  return transporter;
+}
+
+async function sendEmail({ to, subject, body }) {
+  try {
+    const from = process.env.SMTP_FROM || 'notifications@mineazy.co.zw';
+    await getTransporter().sendMail({ from, to, subject, text: body });
+  } catch (err) {
+    console.error('SMTP send failed:', err.message);
+  }
+}
+
+const FROM_EMAIL = 'notifications@mineazy.co.zw';
+const FINANCE_EMAIL = 'notifications@mineazy.co.zw';
+const RECONCILIATION_EMAIL = 'notifications@mineazy.co.zw';
 
 async function createEmail({ from, to, recipientName, subject, body, reqId, targetRole }) {
   const result = await query(
@@ -11,6 +37,9 @@ async function createEmail({ from, to, recipientName, subject, body, reqId, targ
      RETURNING *`,
     [from, to, recipientName, subject, body, reqId, targetRole]
   );
+
+  sendEmail({ to, subject, body });
+
   return result.rows[0];
 }
 
