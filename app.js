@@ -218,6 +218,10 @@ function switchView(viewName) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
 
+  if (viewName !== 'create-requisition') {
+    state._resubmitReq = null;
+  }
+
   if (viewName === 'dashboard') {
     document.getElementById('nav-dashboard').classList.add('active');
     document.getElementById('view-dashboard').classList.add('active');
@@ -231,6 +235,10 @@ function switchView(viewName) {
     } else {
       document.getElementById('create-req-blocked').style.display = 'none';
       document.getElementById('new-req-form').style.display = 'block';
+      if (!state._resubmitReq) {
+        clearForm();
+        document.querySelector('#view-create-requisition .view-title-block p').textContent = 'Create purchases or shop expenses for copper, drills, tools, PPE, or administrative items.';
+      }
       renderApprovalFlow();
     }
   } else if (viewName === 'requisition-queue') {
@@ -476,6 +484,63 @@ function removeFormItemRow(rowId) {
   calculateFormTotal();
 }
 
+function clearForm() {
+  document.getElementById('new-req-form').reset();
+  document.getElementById('items-rows-container').innerHTML = '';
+  addFormItemRow();
+  calculateFormTotal();
+}
+
+// --- Resubmit Rejected ---
+window.resubmitRequisition = function() {
+  const req = state._resubmitReq;
+  if (!req) return;
+
+  const items = req.items || [];
+
+  document.getElementById('req-title').value = req.title;
+  document.getElementById('req-type').value = req.type;
+  document.getElementById('req-department').value = req.department || '';
+  document.getElementById('req-currency').value = req.currency;
+
+  const container = document.getElementById('items-rows-container');
+  container.innerHTML = '';
+  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+
+  items.forEach(it => {
+    const rowId = `item_row_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+    container.insertAdjacentHTML('beforeend', `<div class="item-row" id="${rowId}">
+      <div class="form-group"><div class="item-row-header">Description</div>
+        <input type="text" class="item-desc" required value="${escHtml(it.description || it.desc || '')}"></div>
+      <div class="form-group"><div class="item-row-header">Category</div>
+        <select class="item-cat" required>
+          <option value="Heavy Equipment" ${(it.category||'')==='Heavy Equipment'?'selected':''}>Heavy Equipment</option>
+          <option value="Drills & Tools" ${(it.category||'')==='Drills & Tools'?'selected':''}>Drills & Tools</option>
+          <option value="Safety Wear (PPE)" ${(it.category||'')==='Safety Wear (PPE)'?'selected':''}>Safety Wear (PPE)</option>
+          <option value="Consumables" ${(it.category||'')==='Consumables'?'selected':''}>Consumables</option>
+          <option value="Office Admin" ${(it.category||'')==='Office Admin'?'selected':''}>Office Admin</option>
+        </select></div>
+      <div class="form-group"><div class="item-row-header">Qty</div>
+        <input type="number" class="item-qty" min="1" value="${it.quantity || 1}" required oninput="window.calculateRowSubtotal('${rowId}')"></div>
+      <div class="form-group"><div class="item-row-header">Unit Price</div>
+        <div style="display:flex;align-items:center;position:relative;">
+          <span class="item-currency-hint" style="position:absolute;left:10px;font-size:0.8rem;color:var(--text-secondary);">${symbol}</span>
+          <input type="number" class="item-price" min="0.01" step="0.01" value="${it.unit_price || it.unitPrice || 0}" required style="padding-left:24px;" oninput="window.calculateRowSubtotal('${rowId}')"></div></div>
+      <div class="form-group"><div class="item-row-header">Subtotal</div>
+        <input type="text" class="item-subtotal" value="${symbol}${((it.quantity||0)*(it.unit_price||it.unitPrice||0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}" disabled style="background-color:transparent;border:none;font-weight:700;width:90px;"></div>
+      <button type="button" class="btn-icon-danger" onclick="window.removeFormItemRow('${rowId}')" title="Delete Row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      </button></div>`);
+  });
+
+  calculateFormTotal();
+  state.currentView = 'create-requisition';
+  closeDetailsModal();
+  document.querySelector('#view-create-requisition .view-title-block p').textContent = `Resubmitting: ${req.req_id} — modify the details below and submit.`;
+  showToastNotification(`Editing resubmission of ${req.req_id} — modify and submit when ready`);
+  switchView('create-requisition');
+};
+
 async function handleFormSubmit(e) {
   e.preventDefault();
   if (!state.currentUser || state.currentUser.role !== 'Requestor') {
@@ -483,6 +548,7 @@ async function handleFormSubmit(e) {
     return;
   }
 
+  const isResubmit = !!state._resubmitReq;
   const items = [];
   let totalAmount = 0;
   document.querySelectorAll('.item-row').forEach(row => {
@@ -509,6 +575,7 @@ async function handleFormSubmit(e) {
     document.getElementById('items-rows-container').innerHTML = '';
     addFormItemRow();
     calculateFormTotal();
+    state._resubmitReq = null;
     await loadInitialData();
     switchView('requisition-queue');
   } catch (err) {
@@ -574,14 +641,25 @@ function renderModalActionsPanel(req) {
   const tDisburseBlock = document.getElementById('treasurer-actions-block');
   const tClearBlock = document.getElementById('treasurer-clearance-block');
   const reqReceiptsBlock = document.getElementById('requestor-receipts-block');
+  const reqResubmitBlock = document.getElementById('requestor-resubmit-block');
 
   actionsPanel.style.display = 'none';
   appBlock.style.display = 'none';
   tDisburseBlock.style.display = 'none';
   tClearBlock.style.display = 'none';
   reqReceiptsBlock.style.display = 'none';
+  reqResubmitBlock.style.display = 'none';
 
-  if (req.status === 'Rejected' || req.status === 'Change Cleared') return;
+  if (req.status === 'Rejected') {
+    if (state.currentUser && req.requestor_id === state.currentUser.id) {
+      actionsPanel.style.display = 'block';
+      reqResubmitBlock.style.display = 'block';
+      state._resubmitReq = req;
+    }
+    return;
+  }
+
+  if (req.status === 'Change Cleared') return;
 
   const userRole = state.currentUser ? state.currentUser.role : '';
   const activeRequiredRole = STATUS_ACTOR_MAP[req.status];
