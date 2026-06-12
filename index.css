@@ -128,53 +128,6 @@ header {
   letter-spacing: 1px;
 }
 
-/* Simulator Bar */
-.simulator-panel {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: rgba(15, 30, 56, 0.4);
-  padding: 6px 12px 6px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
-}
-
-.simulator-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--copper-light);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.role-badge-pill {
-  background-color: var(--copper);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.role-switcher-dropdown {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  outline: none;
-  transition: var(--transition-smooth);
-}
-
-.role-switcher-dropdown:focus {
-  border-color: var(--copper);
-  box-shadow: 0 0 0 2px var(--copper-glow);
-}
 
 /* Sidebar */
 aside {
@@ -1879,10 +1832,8 @@ main {
     justify-content: space-between;
     gap: 6px;
   }
-  #user-role-select {
-    font-size: 0.75rem;
-    padding: 4px 8px;
-    max-width: 140px;
+  .flex-break {
+    width: 100%;
   }
   main {
     padding: 12px;

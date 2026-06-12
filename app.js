@@ -2,15 +2,6 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3001/api'
   : '/api';
 
-const USERS = [
-  { name: 'Chansa Mwape', role: 'Requestor', email: 'chansa.mwape@copperbeltmining.co.zm', dept: 'Chaisa' },
-  { name: 'Mutale Chilufya', role: '1st Approver', email: 'mutale.chilufya@copperbeltmining.co.zm', dept: 'Mumba' },
-  { name: 'Kondwelani Banda', role: '2nd Approver', email: 'kondwelani.banda@copperbeltmining.co.zm', dept: 'Mpika' },
-  { name: 'Sibongile Phiri', role: '3rd Approver', email: 'sibongile.phiri@copperbeltmining.co.zm', dept: 'Mpika' },
-  { name: 'Mwansa Kabwe', role: 'Final Approver', email: 'mwansa.kabwe@copperbeltmining.co.zm', dept: 'Chaisa' },
-  { name: 'Bwalya Tembo', role: 'Treasurer', email: 'bwalya.tembo@copperbeltmining.co.zm', dept: 'Mumba' }
-];
-
 const STATUS_FLOW = {
   'Admin': ['Pending','1st Approver stage','2nd Approver Stage','3rd Approver Stage','Final Approver','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Shop Use': ['Pending','1st Approver stage','Final Approver','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
@@ -133,7 +124,6 @@ async function loadInitialData() {
 }
 
 function setupEventListeners() {
-  document.getElementById('user-role-select').addEventListener('change', (e) => switchUser(parseInt(e.target.value)));
   document.querySelectorAll('.nav-item').forEach(el => {
     el.addEventListener('click', () => {
       const view = el.dataset.view;
@@ -196,21 +186,6 @@ async function handleLoginSubmit(e) {
     btn.disabled = false;
     btn.textContent = 'Sign In';
   }
-}
-
-// --- User Switching (for role simulation) ---
-function switchUser(userIndex) {
-  const user = USERS[userIndex];
-  if (!user) return;
-  state.currentUser = { ...state.currentUser, name: user.name, role: user.role, department: user.dept };
-  updateUserDisplay();
-  const adminNav = document.getElementById('nav-admin');
-  if (adminNav) adminNav.style.display = state.currentUser.role === 'Admin' ? '' : 'none';
-  const auditNav = document.getElementById('nav-audit');
-  if (auditNav) auditNav.style.display = state.currentUser.role === 'Admin' ? '' : 'none';
-
-  renderDashboard();
-  renderQueue();
 }
 
 // --- View Controller ---
@@ -947,11 +922,6 @@ function renderEmailList() {
 
 window.actOnEmail = async function(emailId, reqId, targetRole) {
   try { await apiFetch('PATCH', `/emails/${emailId}/read`); } catch {}
-  const matchIdx = USERS.findIndex(u => u.role === targetRole);
-  if (matchIdx !== -1) {
-    document.getElementById('user-role-select').value = matchIdx;
-    switchUser(matchIdx);
-  }
   toggleEmailDrawer();
   openDetails(reqId);
 };
