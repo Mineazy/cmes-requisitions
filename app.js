@@ -381,31 +381,77 @@ function renderQueue() {
   const container = document.getElementById('requisitions-queue-list');
   let filtered = [...state.requisitions];
 
+  const search = (document.getElementById('queue-search-input')?.value || '').toLowerCase().trim();
+  if (state._lastQueueSearch !== search) {
+    state._lastQueueSearch = search;
+    state._queuePage = 1;
+  }
+
   if (state.queueFilter === 'pending') {
     filtered = getActionItemsForUser();
   } else if (state.queueFilter === 'my') {
     filtered = state.requisitions.filter(r => r.requestor_name === (state.currentUser ? state.currentUser.name : ''));
   }
 
+  if (search) {
+    filtered = filtered.filter(r =>
+      (r.req_id && r.req_id.toLowerCase().includes(search)) ||
+      (r.title && r.title.toLowerCase().includes(search)) ||
+      (r.requestor_name && r.requestor_name.toLowerCase().includes(search))
+    );
+  }
+
+  const STATUS_ORDER = ['Pending','1st Approver stage','2nd Approver Stage','3rd Approver Stage','Final Approver','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
   filtered.sort((a, b) => {
-    const aNeeds = getActionItemsForUser().some(x => x.req_id === a.req_id);
-    const bNeeds = getActionItemsForUser().some(x => x.req_id === b.req_id);
-    if (aNeeds && !bNeeds) return -1;
-    if (!aNeeds && bNeeds) return 1;
+    const aIdx = STATUS_ORDER.indexOf(a.status);
+    const bIdx = STATUS_ORDER.indexOf(b.status);
+    if (aIdx !== bIdx) return aIdx - bIdx;
     return b.req_id.localeCompare(a.req_id);
   });
+
+  const PER_PAGE = 12;
+  const page = state._queuePage || 1;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  state._queuePage = currentPage;
+  const start = (currentPage - 1) * PER_PAGE;
+  const pageItems = filtered.slice(start, start + PER_PAGE);
 
   if (filtered.length === 0) {
     container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-secondary);background:var(--bg-card);border-radius:18px;border:1px dashed var(--border-color);">
       <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;stroke:var(--text-muted);fill:none;margin-bottom:12px;"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
       <p style="font-size:1rem;font-weight:700;">No requisitions found</p></div>`;
   } else {
-    container.innerHTML = filtered.map(r => renderRequisitionCardHTML(r)).join('');
+    container.innerHTML = pageItems.map(r => renderRequisitionCardHTML(r)).join('');
   }
+
+  const paginationEl = document.getElementById('queue-pagination');
+  if (totalPages <= 1) {
+    paginationEl.innerHTML = '';
+  } else {
+    let html = '';
+    html += `<button onclick="window.goQueuePage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+    let lastShown = 0;
+    for (let p = 1; p <= totalPages; p++) {
+      if (p === currentPage || p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2) {
+        if (lastShown && p - lastShown > 1) html += `<span class="page-info">...</span>`;
+        html += `<button class="${p === currentPage ? 'active-page' : ''}" onclick="window.goQueuePage(${p})">${p}</button>`;
+        lastShown = p;
+      }
+    }
+    html += `<button onclick="window.goQueuePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
+    paginationEl.innerHTML = html;
+  }
+}
+
+function goQueuePage(page) {
+  state._queuePage = page;
+  renderQueue();
 }
 
 function changeQueueFilter(filterType) {
   state.queueFilter = filterType;
+  state._queuePage = 1;
   document.querySelectorAll('.filter-tab').forEach(el => el.classList.remove('active'));
   document.getElementById(`tab-${filterType}`).classList.add('active');
   renderQueue();
@@ -1248,6 +1294,7 @@ async function downloadPdfReport() {
 // --- Globals for HTML onclick ---
 window.switchView = switchView;
 window.changeQueueFilter = changeQueueFilter;
+window.goQueuePage = goQueuePage;
 window.toggleEmailDrawer = toggleEmailDrawer;
 window.addFormItemRow = addFormItemRow;
 window.removeFormItemRow = removeFormItemRow;
