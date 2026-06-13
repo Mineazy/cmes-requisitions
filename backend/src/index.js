@@ -39,9 +39,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", process.env.FRONTEND_URL || 'http://localhost:3000']
+      connectSrc: ["'self'", process.env.FRONTEND_URL || 'http://localhost:3000', "https://cdnjs.cloudflare.com"]
     }
   } : false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
