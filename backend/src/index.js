@@ -1,5 +1,14 @@
 require('dotenv').config();
 
+// Validate required environment variables BEFORE loading any modules that depend on them
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'];
+for (const v of REQUIRED_ENV_VARS) {
+  if (!process.env[v]) {
+    console.error(`FATAL: ${v} environment variable is required`);
+    process.exit(1);
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,15 +25,6 @@ const requisitionRoutes = require('./routes/requisitions');
 const userRoutes = require('./routes/users');
 const emailRoutes = require('./routes/emails');
 const adminRoutes = require('./routes/admin');
-
-// Validate required environment variables
-const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'];
-for (const v of REQUIRED_ENV_VARS) {
-  if (!process.env[v]) {
-    console.error(`FATAL: ${v} environment variable is required`);
-    process.exit(1);
-  }
-}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
