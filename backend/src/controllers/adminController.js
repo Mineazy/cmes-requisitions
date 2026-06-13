@@ -6,7 +6,10 @@ const SALT_ROUNDS = 12;
 
 async function getStats(req, res) {
   try {
-    const [userCount, reqCount, statusCounts, recentReqs] = await Promise.all([
+    const [
+      userCount, reqCount, statusCounts, recentReqs,
+      zmwTotal, usdTotal, roleCounts
+    ] = await Promise.all([
       query('SELECT COUNT(*) FROM users'),
       query('SELECT COUNT(*) FROM requisitions'),
       query('SELECT status, COUNT(*) as count FROM requisitions GROUP BY status ORDER BY status'),
@@ -16,14 +19,20 @@ async function getStats(req, res) {
         FROM requisitions r
         JOIN users u ON r.requestor_id = u.id
         ORDER BY r.created_at DESC LIMIT 5
-      `)
+      `),
+      query("SELECT COALESCE(SUM(total_amount), 0) as total FROM requisitions WHERE currency = 'ZMW'"),
+      query("SELECT COALESCE(SUM(total_amount), 0) as total FROM requisitions WHERE currency = 'USD'"),
+      query('SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY role')
     ]);
 
     res.json({
       stats: {
         totalUsers: parseInt(userCount.rows[0].count),
         totalRequisitions: parseInt(reqCount.rows[0].count),
+        totalZmw: parseFloat(zmwTotal.rows[0].total),
+        totalUsd: parseFloat(usdTotal.rows[0].total),
         byStatus: statusCounts.rows,
+        usersByRole: roleCounts.rows,
         recentRequisitions: recentReqs.rows
       }
     });

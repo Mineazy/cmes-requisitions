@@ -5,30 +5,27 @@ let transporter = null;
 
 function getTransporter() {
   if (transporter) return transporter;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
   transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'mail.mineazy.co.zw',
-    port: parseInt(process.env.SMTP_PORT) || 465,
+    host: SMTP_HOST,
+    port: parseInt(SMTP_PORT) || 465,
     secure: true,
     auth: {
-      user: process.env.SMTP_USER || 'notifications@mineazy.co.zw',
-      pass: process.env.SMTP_PASS || 'M1n3@zy2026'
+      user: SMTP_USER,
+      pass: SMTP_PASS
     }
   });
   return transporter;
 }
 
 async function sendEmail({ to, subject, body }) {
-  try {
-    const from = process.env.SMTP_FROM || 'notifications@mineazy.co.zw';
-    await getTransporter().sendMail({ from, to, subject, text: body });
-  } catch (err) {
-    console.error('SMTP send failed:', err.message);
-  }
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  await getTransporter().sendMail({ from, to, subject, text: body });
 }
 
-const FROM_EMAIL = 'notifications@mineazy.co.zw';
-const FINANCE_EMAIL = 'notifications@mineazy.co.zw';
-const RECONCILIATION_EMAIL = 'notifications@mineazy.co.zw';
+const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER;
+const FINANCE_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER;
+const RECONCILIATION_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER;
 
 async function createEmail({ from, to, recipientName, subject, body, reqId, targetRole }) {
   const result = await query(
@@ -38,7 +35,9 @@ async function createEmail({ from, to, recipientName, subject, body, reqId, targ
     [from, to, recipientName, subject, body, reqId, targetRole]
   );
 
-  sendEmail({ to, subject, body });
+  sendEmail({ to, subject, body }).catch(err => {
+    console.error(`SMTP send failed for "${subject}" to ${to}:`, err.message);
+  });
 
   return result.rows[0];
 }
@@ -79,13 +78,6 @@ async function notifyRejection(req) {
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];
-
-  const approvalResult = await query(
-    'SELECT * FROM approvals WHERE requisition_id = $1 AND action = $2 ORDER BY timestamp DESC LIMIT 1',
-    [req.id, 'Rejected']
-  );
-
-  const rejector = approvalResult.rows[0];
 
   const email = await createEmail({
     from: FROM_EMAIL,

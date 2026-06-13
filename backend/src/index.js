@@ -2,6 +2,10 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 const path = require('path');
 const { initializeDatabase } = require('./config/database');
 const cryptoService = require('./services/cryptoService');
@@ -13,24 +17,73 @@ const userRoutes = require('./routes/users');
 const emailRoutes = require('./routes/emails');
 const adminRoutes = require('./routes/admin');
 
+// Validate required environment variables
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'];
+for (const v of REQUIRED_ENV_VARS) {
+  if (!process.env[v]) {
+    console.error(`FATAL: ${v} environment variable is required`);
+    process.exit(1);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Middleware
+// Trust proxy when behind a reverse proxy (e.g., Nginx, Heroku, Render)
+app.set('trust proxy', 1);
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", process.env.FRONTEND_URL || 'http://localhost:3000']
+    }
+  } : false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
+// Compression
+app.use(compression());
+
+// CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: isProduction
+    ? (process.env.FRONTEND_URL || '').split(',').map(s => s.trim()).filter(Boolean)
+    : process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api/', apiLimiter);
+
+// Stricter rate limit for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later.' }
+});
+app.use('/api/auth/login', authLimiter);
 
 // Request logging
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'test') {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
-  }
-  next();
-});
+app.use(morgan(isProduction ? 'combined' : 'dev'));
+
+// Body parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -49,7 +102,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static frontend in production
-if (process.env.NODE_ENV === 'production') {
+if (isProduction) {
   app.use(express.static(path.resolve(__dirname, '../../')));
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../../index.html'));
@@ -59,22 +112,21 @@ if (process.env.NODE_ENV === 'production') {
 // Error handling middleware
 app.use((err, req, res, _next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(err.status || 500).json({
+    error: isProduction ? 'Internal server error' : err.message
+  });
 });
 
 // Start server
 async function start() {
   try {
-    // Load crypto keys
     cryptoService.loadKeys();
     console.log('Crypto keys loaded');
 
-    // Initialize database
     await initializeDatabase();
     console.log('Database initialized');
 
-    // Auto-seed in production
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       try {
         await seed();
         console.log('Database seeded with initial data');
@@ -93,7 +145,6 @@ async function start() {
   }
 }
 
-// Only start if not in test mode
 if (process.env.NODE_ENV !== 'test') {
   start();
 }

@@ -353,6 +353,8 @@ main {
 .metric-card.emerald-accent::after { background: var(--emerald); }
 .metric-card.ruby-accent::after { background: var(--ruby); }
 .metric-card.blue-accent::after { background: #3b82f6; }
+.metric-card.gold-accent::after { background: #f59e0b; }
+.metric-card.silver-accent::after { background: #94a3b8; }
 
 .metric-card:hover {
   transform: translateY(-4px);
@@ -398,6 +400,12 @@ main {
   font-weight: 700;
   margin-top: 16px;
   color: var(--text-primary);
+}
+
+.metric-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
 }
 
 .metric-footer {
@@ -2147,7 +2155,7 @@ main {
 
 .admin-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   width: 100%;
 }

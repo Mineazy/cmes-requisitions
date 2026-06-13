@@ -225,10 +225,21 @@ function switchView(viewName) {
     document.getElementById('nav-admin').classList.add('active');
     document.getElementById('view-admin-panel').classList.add('active');
     renderAdminPanel();
+    if (adminRefreshInterval) clearInterval(adminRefreshInterval);
+    adminRefreshInterval = setInterval(adminRefreshStats, 15000);
   } else if (viewName === 'audit-trail') {
     document.getElementById('nav-audit').classList.add('active');
     document.getElementById('view-audit-trail').classList.add('active');
     renderAuditTrail();
+  } else if (viewName === 'profile') {
+    document.getElementById('nav-profile').classList.add('active');
+    document.getElementById('view-profile').classList.add('active');
+    renderProfile();
+  }
+  // Clear admin refresh when leaving admin panel
+  if (viewName !== 'admin-panel' && adminRefreshInterval) {
+    clearInterval(adminRefreshInterval);
+    adminRefreshInterval = null;
   }
 }
 
@@ -910,7 +921,7 @@ function toggleEmailDrawer() {
 function renderEmailList() {
   const container = document.getElementById('email-list-container');
   if (state.emails.length === 0) {
-    container.innerHTML = `<div class="email-empty-state"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg><p>Your Simulation Inbox is empty.</p></div>`;
+    container.innerHTML = `<div class="email-empty-state"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg><p>No notifications yet.</p></div>`;
     return;
   }
   container.innerHTML = state.emails.map(em => `<div class="email-card" style="opacity:${em.read ? '0.7' : '1'}">
@@ -995,6 +1006,8 @@ function renderApprovalFlow() {
 }
 
 // --- Admin Panel ---
+let adminRefreshInterval = null;
+
 async function renderAdminPanel() {
   try {
     const [statsRes, usersRes, reqsRes] = await Promise.all([
@@ -1006,9 +1019,15 @@ async function renderAdminPanel() {
     const stats = statsRes.stats;
     document.getElementById('admin-stat-users').textContent = stats.totalUsers;
     document.getElementById('admin-stat-requisitions').textContent = stats.totalRequisitions;
-    const pendingCount = stats.byStatus.filter(s => !['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
+    document.getElementById('admin-stat-zmw').textContent = `K${stats.totalZmw.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    document.getElementById('admin-stat-usd').textContent = `$${stats.totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    const pendingStatuses = stats.byStatus.filter(s => !['Change Cleared', 'Rejected'].includes(s.status));
+    const pendingCount = pendingStatuses.reduce((a, s) => a + parseInt(s.count), 0);
     const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
     document.getElementById('admin-stat-pending').textContent = pendingCount;
+    const pendingBreakdown = pendingStatuses.map(s => `${s.status}: ${s.count}`).join(' | ');
+    document.getElementById('admin-stat-pending-sub').textContent = pendingBreakdown || 'No pending items';
     document.getElementById('admin-stat-closed').textContent = closedCount;
 
     renderAdminRequisitions(reqsRes.requisitions);
@@ -1023,6 +1042,26 @@ async function renderAdminPanel() {
   document.getElementById('admin-add-user-btn').onclick = () => openAdminUserModal();
   document.getElementById('admin-download-csv').onclick = downloadCsvReport;
   document.getElementById('admin-download-pdf').onclick = downloadPdfReport;
+}
+
+async function adminRefreshStats() {
+  try {
+    const statsRes = await apiFetch('GET', '/admin/stats');
+    const stats = statsRes.stats;
+    document.getElementById('admin-stat-users').textContent = stats.totalUsers;
+    document.getElementById('admin-stat-requisitions').textContent = stats.totalRequisitions;
+    document.getElementById('admin-stat-zmw').textContent = `K${stats.totalZmw.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    document.getElementById('admin-stat-usd').textContent = `$${stats.totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    const pendingStatuses = stats.byStatus.filter(s => !['Change Cleared', 'Rejected'].includes(s.status));
+    const pendingCount = pendingStatuses.reduce((a, s) => a + parseInt(s.count), 0);
+    const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
+    document.getElementById('admin-stat-pending').textContent = pendingCount;
+    document.getElementById('admin-stat-pending-sub').textContent = pendingStatuses.map(s => `${s.status}: ${s.count}`).join(' | ') || 'No pending items';
+    document.getElementById('admin-stat-closed').textContent = closedCount;
+  } catch (err) {
+    console.warn('Stats refresh failed:', err.message);
+  }
 }
 
 function debounce(fn, delay) {
@@ -1329,6 +1368,58 @@ async function adminDeleteUser(userId, userName) {
   } catch (err) {
     showToastNotification('Error: ' + err.message);
   }
+}
+
+// --- Profile ---
+async function renderProfile() {
+  try {
+    const data = await apiFetch('GET', '/auth/profile');
+    const u = data.user;
+    document.getElementById('profile-name').textContent = u.name;
+    document.getElementById('profile-email').textContent = u.email;
+    document.getElementById('profile-role').textContent = u.role;
+    document.getElementById('profile-dept').textContent = u.department || '-';
+    document.getElementById('profile-created').textContent = u.created_at ? new Date(u.created_at).toLocaleDateString() : '-';
+  } catch (err) {
+    showToastNotification('Failed to load profile: ' + err.message);
+  }
+
+  const form = document.getElementById('profile-password-form');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('profile-pw-error');
+    const successEl = document.getElementById('profile-pw-success');
+    const btn = document.getElementById('profile-pw-btn');
+    errorEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    const currentPw = document.getElementById('profile-current-pw').value;
+    const newPw = document.getElementById('profile-new-pw').value;
+    const confirmPw = document.getElementById('profile-confirm-pw').value;
+
+    if (newPw !== confirmPw) {
+      errorEl.textContent = 'New passwords do not match';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      btn.textContent = 'Changing...';
+      await apiFetch('POST', '/auth/change-password', { currentPassword: currentPw, newPassword: newPw });
+      successEl.textContent = 'Password changed successfully!';
+      successEl.style.display = 'block';
+      document.getElementById('profile-current-pw').value = '';
+      document.getElementById('profile-new-pw').value = '';
+      document.getElementById('profile-confirm-pw').value = '';
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Change Password';
+    }
+  };
 }
 
 // Start
