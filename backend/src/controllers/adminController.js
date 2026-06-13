@@ -251,6 +251,11 @@ async function deleteUser(req, res) {
       return res.status(403).json({ error: 'Cannot delete an Admin user' });
     }
 
+    // Nullify foreign key references before deleting the user
+    await query('UPDATE requisitions SET requestor_id = NULL WHERE requestor_id = $1', [userId]);
+    await query('UPDATE approvals SET user_id = NULL WHERE user_id = $1', [userId]);
+    await query('UPDATE audit_logs SET user_id = NULL WHERE user_id = $1', [userId]);
+
     await query('DELETE FROM users WHERE id = $1', [userId]);
 
     await logAudit({
