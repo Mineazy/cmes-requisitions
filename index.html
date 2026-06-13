@@ -350,24 +350,37 @@
           <div class="view-title-block">
             <div><h2>My Profile</h2><p>View your account details and change your password.</p></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
+          <div class="profile-grid">
             <div class="glass-panel">
               <div class="panel-header"><h3>Account Information</h3></div>
-              <div id="profile-info" style="padding:16px 0;">
-                <div style="display:flex;flex-direction:column;gap:14px;">
-                  <div><label style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Name</label><p id="profile-name" style="font-size:1rem;font-weight:600;margin-top:2px;">-</p></div>
-                  <div><label style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Email</label><p id="profile-email" style="font-size:1rem;font-weight:600;margin-top:2px;">-</p></div>
-                  <div><label style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Role</label><p id="profile-role" style="font-size:1rem;font-weight:600;margin-top:2px;">-</p></div>
-                  <div><label style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Department</label><p id="profile-dept" style="font-size:1rem;font-weight:600;margin-top:2px;">-</p></div>
-                  <div><label style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Member Since</label><p id="profile-created" style="font-size:1rem;font-weight:600;margin-top:2px;">-</p></div>
+              <div class="profile-info">
+                <div class="profile-field">
+                  <label>Name</label>
+                  <p id="profile-name">-</p>
+                </div>
+                <div class="profile-field">
+                  <label>Email</label>
+                  <p id="profile-email">-</p>
+                </div>
+                <div class="profile-field">
+                  <label>Role</label>
+                  <p id="profile-role">-</p>
+                </div>
+                <div class="profile-field">
+                  <label>Department</label>
+                  <p id="profile-dept">-</p>
+                </div>
+                <div class="profile-field">
+                  <label>Member Since</label>
+                  <p id="profile-created">-</p>
                 </div>
               </div>
             </div>
             <div class="glass-panel">
               <div class="panel-header"><h3>Change Password</h3></div>
-              <form id="profile-password-form" style="padding:16px 0;">
-                <div id="profile-pw-error" class="login-error" style="display:none;margin-bottom:12px;"></div>
-                <div id="profile-pw-success" style="display:none;padding:8px 12px;border-radius:8px;background:rgba(16,185,129,0.1);color:var(--emerald);font-size:0.85rem;font-weight:600;margin-bottom:12px;border:1px solid rgba(16,185,129,0.2);"></div>
+              <form id="profile-password-form">
+                <div id="profile-pw-error" class="login-error" style="display:none;"></div>
+                <div id="profile-pw-success" class="profile-success-msg" style="display:none;"></div>
                 <div class="form-group">
                   <label for="profile-current-pw">Current Password</label>
                   <input type="password" id="profile-current-pw" required placeholder="Enter current password">
