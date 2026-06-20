@@ -9,6 +9,7 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest --forceExit --detectOpenHandles",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch --forceExit",
     "seed": "node src/seed.js",
+    "purge": "node src/seed.js purge",
     "generate-keys": "node src/utils/generateKeys.js"
   },
   "dependencies": {

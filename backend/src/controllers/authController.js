@@ -75,8 +75,8 @@ async function changePassword(req, res) {
       return res.status(400).json({ error: 'Current password and new password are required' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' });
     }
 
     const result = await query('SELECT * FROM users WHERE id = $1', [req.user.id]);

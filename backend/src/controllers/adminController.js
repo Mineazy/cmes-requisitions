@@ -3,6 +3,12 @@ const { query } = require('../config/database');
 const { logAudit, getAuditLogs } = require('../services/auditService');
 
 const SALT_ROUNDS = 12;
+const VALID_ROLES = ['Admin', '1st Approver', '2nd Approver', '3rd Approver', 'Final Approver', 'Treasurer', 'Requestor'];
+const PASSWORD_MIN_LENGTH = 8;
+
+function isValidRole(role) {
+  return VALID_ROLES.includes(role);
+}
 
 async function getStats(req, res) {
   try {
@@ -63,6 +69,14 @@ async function createUser(req, res) {
       return res.status(400).json({ error: 'Name, email, role, and password are required' });
     }
 
+    if (!isValidRole(role)) {
+      return res.status(400).json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` });
+    }
+
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` });
+    }
+
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'A user with this email already exists' });
@@ -96,6 +110,10 @@ async function updateUser(req, res) {
     const existing = await query('SELECT id FROM users WHERE id = $1', [userId]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (role && !isValidRole(role)) {
+      return res.status(400).json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` });
     }
 
     if (email) {
@@ -135,8 +153,8 @@ async function resetPassword(req, res) {
     const userId = req.params.id;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (!password || password.length < PASSWORD_MIN_LENGTH) {
+      return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` });
     }
 
     const existing = await query('SELECT id FROM users WHERE id = $1', [userId]);

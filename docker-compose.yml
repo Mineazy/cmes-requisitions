@@ -29,7 +29,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@db:5432/cmes_requisitions
-      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-secure-random-string}
+      JWT_SECRET: ${JWT_SECRET?}  # Must be set via environment — no fallback
       JWT_EXPIRY: 24h
       FRONTEND_URL: http://localhost:3001
     volumes:
