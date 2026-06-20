@@ -15,5 +15,6 @@ router.post('/users/:id/reset-password', adminController.resetPassword);
 router.get('/requisitions', adminController.getAllRequisitions);
 router.get('/report', adminController.downloadReport);
 router.get('/audit-logs', adminController.getAuditLogs);
+router.post('/purge', adminController.purgeDummyUsers);
 
 module.exports = router;

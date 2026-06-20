@@ -310,4 +310,20 @@ async function getAuditLogsCtrl(req, res) {
   }
 }
 
-module.exports = { getStats, listUsers, createUser, updateUser, resetPassword, deleteUser, getAllRequisitions, downloadReport, getAuditLogs: getAuditLogsCtrl };
+async function purgeDummyUsers(req, res) {
+  try {
+    const { purge } = require('../seed');
+    const result = await purge();
+    res.json({ message: `Purged ${result.purged} dummy user(s)`, purged: result.purged });
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'PURGE_USERS', entityType: 'user',
+      details: `Purged ${result.purged} dummy user(s) from the system`
+    });
+  } catch (err) {
+    console.error('Purge users error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { getStats, listUsers, createUser, updateUser, resetPassword, deleteUser, getAllRequisitions, downloadReport, getAuditLogs: getAuditLogsCtrl, purgeDummyUsers };
