@@ -1042,6 +1042,19 @@ async function renderAdminPanel() {
   document.getElementById('admin-add-user-btn').onclick = () => openAdminUserModal();
   document.getElementById('admin-download-csv').onclick = downloadCsvReport;
   document.getElementById('admin-download-pdf').onclick = downloadPdfReport;
+  document.getElementById('admin-purge-btn').onclick = purgeDummyUsers;
+}
+
+async function purgeDummyUsers() {
+  if (!confirm('Are you sure? This will permanently delete ALL users except lodzax (Admin). Their requisitions, approvals, and audit logs will be orphaned. This cannot be undone.')) return;
+  if (!confirm('Really? Only lodzax@gmail.com will remain. All other users will be deleted.')) return;
+  try {
+    const res = await apiFetch('POST', '/admin/purge');
+    showToastNotification(`Purged ${res.purged} dummy user(s) successfully`);
+    renderAdminPanel();
+  } catch (err) {
+    showToastNotification('Purge failed: ' + err.message);
+  }
 }
 
 async function adminRefreshStats() {
