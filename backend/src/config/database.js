@@ -4,17 +4,42 @@ let pool = null;
 
 function getPool() {
   if (!pool) {
-    const url = process.env.DATABASE_URL || 'mysql://root:root@localhost:3306/cmes_requisitions';
-    const useSSL = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
-    pool = mysql.createPool({
-      uri: url,
-      ssl: useSSL ? { rejectUnauthorized: true } : undefined,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0
-    });
+    const url = process.env.DATABASE_URL || '';
+    const dbUser = process.env.DB_USER;
+    const dbPass = process.env.DB_PASSWORD;
+    const dbHost = process.env.DB_HOST;
+    const dbPort = process.env.DB_PORT || '4000';
+    const dbName = process.env.DB_NAME || 'cmes_requisitions';
+
+    let sslEnabled = false;
+    let config;
+
+    if (dbUser && dbPass && dbHost) {
+      config = {
+        host: dbHost,
+        port: parseInt(dbPort),
+        user: dbUser,
+        password: dbPass,
+        database: dbName,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+      };
+      sslEnabled = process.env.DB_SSL === 'true';
+    } else if (url) {
+      config = { uri: url, waitForConnections: true, connectionLimit: 10, queueLimit: 0, enableKeepAlive: true, keepAliveInitialDelay: 0 };
+      sslEnabled = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
+    } else {
+      config = { host: 'localhost', port: 3306, user: 'root', password: '', database: 'cmes_requisitions', waitForConnections: true, connectionLimit: 10, queueLimit: 0, enableKeepAlive: true, keepAliveInitialDelay: 0 };
+    }
+
+    if (sslEnabled) {
+      config.ssl = { rejectUnauthorized: true };
+    }
+
+    pool = mysql.createPool(config);
     pool.on('error', (err) => {
       console.error('Unexpected database pool error:', err);
     });
