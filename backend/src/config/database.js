@@ -5,8 +5,10 @@ let pool = null;
 function getPool() {
   if (!pool) {
     const url = process.env.DATABASE_URL || 'mysql://root:root@localhost:3306/cmes_requisitions';
+    const useSSL = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
     pool = mysql.createPool({
       uri: url,
+      ssl: useSSL ? { rejectUnauthorized: true } : undefined,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
