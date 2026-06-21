@@ -1,8 +1,7 @@
 require('dotenv').config({ path: '.env' });
 
-// Use test database if available, otherwise use the main one with test prefix
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/cmes_requisitions_test';
+  process.env.DATABASE_URL = 'mysql://root:root@localhost:3306/cmes_requisitions_test';
 }
 
 if (!process.env.JWT_SECRET) {
@@ -15,7 +14,6 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// Ensure test keys exist
 const keysDir = path.resolve(__dirname, '../keys');
 if (!fs.existsSync(keysDir)) {
   fs.mkdirSync(keysDir, { recursive: true });

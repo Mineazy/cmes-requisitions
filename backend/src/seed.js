@@ -19,8 +19,8 @@ async function seed() {
       const hash = await bcrypt.hash(u.password, 12);
       await query(
         `INSERT INTO users (name, email, role, department, password_hash)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, department = EXCLUDED.department`,
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE name = VALUES(name), role = VALUES(role), department = VALUES(department)`,
         [u.name, u.email, u.role, u.dept, hash]
       );
     }
@@ -42,13 +42,13 @@ async function seed() {
 async function purge() {
   await initializeDatabase();
 
-  const adminResult = await query('SELECT id FROM users WHERE email = $1', [ADMIN_EMAIL]);
+  const adminResult = await query('SELECT id FROM users WHERE email = ?', [ADMIN_EMAIL]);
   if (adminResult.rows.length === 0) {
     console.log('Admin user not found — running seed first');
     await seed();
   }
 
-  const otherUsers = await query('SELECT id, name, email, role FROM users WHERE email != $1', [ADMIN_EMAIL]);
+  const otherUsers = await query('SELECT id, name, email, role FROM users WHERE email != ?', [ADMIN_EMAIL]);
 
   if (otherUsers.rows.length === 0) {
     console.log('No dummy users to purge — system is clean');
@@ -62,17 +62,17 @@ async function purge() {
     console.log(`  - ${u.name} (${u.email}) [${u.role}]`);
   }
 
-  // Nullify FK references, then delete
-  await query(`UPDATE requisitions SET requestor_id = NULL WHERE requestor_id = ANY($1::int[])`, [ids]);
-  await query(`UPDATE approvals SET user_id = NULL WHERE user_id = ANY($1::int[])`, [ids]);
-  await query(`UPDATE audit_logs SET user_id = NULL WHERE user_id = ANY($1::int[])`, [ids]);
-  await query(`DELETE FROM users WHERE id = ANY($1::int[])`, [ids]);
+  const placeholders = ids.map(() => '?').join(',');
+
+  await query(`UPDATE requisitions SET requestor_id = NULL WHERE requestor_id IN (${placeholders})`, ids);
+  await query(`UPDATE approvals SET user_id = NULL WHERE user_id IN (${placeholders})`, ids);
+  await query(`UPDATE audit_logs SET user_id = NULL WHERE user_id IN (${placeholders})`, ids);
+  await query(`DELETE FROM users WHERE id IN (${placeholders})`, ids);
 
   console.log(`Purged ${otherUsers.rows.length} dummy user(s) successfully`);
   return { purged: otherUsers.rows.length };
 }
 
-// Run when invoked directly via `node src/seed.js`
 if (require.main === module) {
   const args = process.argv.slice(2);
   if (args.includes('purge')) {

@@ -4,8 +4,6 @@ const { query, initializeDatabase, getPool } = require('../src/config/database')
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
-// Integration tests require PostgreSQL.
-// Set RUN_DB_TESTS=1 to enable them when a database is available.
 let dbAvailable = process.env.RUN_DB_TESTS === '1';
 
 let testUserToken = '';
@@ -19,21 +17,25 @@ if (dbAvailable) {
     const hash = await bcrypt.hash('testpass123', 12);
     const userResult = await query(
       `INSERT INTO users (name, email, role, department, password_hash)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
-       RETURNING *`,
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE name = VALUES(name)`,
       ['Test Requestor', 'test.requestor@test.co.zm', 'Requestor', 'Test Dept', hash]
     );
 
-    testUserId = userResult.rows[0]?.id || (await query("SELECT id FROM users WHERE email = 'test.requestor@test.co.zm'")).rows[0].id;
+    if (userResult.insertId) {
+      testUserId = userResult.insertId;
+    } else {
+      const existing = await query("SELECT id FROM users WHERE email = 'test.requestor@test.co.zm'");
+      testUserId = existing.rows[0].id;
+    }
 
     const roles = ['1st Approver', '2nd Approver', '3rd Approver', 'Final Approver', 'Treasurer'];
     for (const role of roles) {
       const h = await bcrypt.hash('testpass123', 12);
       const email = `test.${role.toLowerCase().replace(/\s+/g, '.')}@test.co.zm`;
       await query(
-        `INSERT INTO users (name, email, role, department, password_hash)
-         VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING`,
+        `INSERT IGNORE INTO users (name, email, role, department, password_hash)
+         VALUES (?, ?, ?, ?, ?)`,
         [`Test ${role}`, email, role, 'Test Dept', h]
       );
     }
@@ -41,9 +43,9 @@ if (dbAvailable) {
 
   afterAll(async () => {
     try {
-      await query('DELETE FROM approvals WHERE requisition_id IN (SELECT id FROM requisitions WHERE requestor_id = $1)', [testUserId]);
-      await query('DELETE FROM items WHERE requisition_id IN (SELECT id FROM requisitions WHERE requestor_id = $1)', [testUserId]);
-      await query('DELETE FROM requisitions WHERE requestor_id = $1', [testUserId]);
+      await query('DELETE FROM approvals WHERE requisition_id IN (SELECT id FROM requisitions WHERE requestor_id = ?)', [testUserId]);
+      await query('DELETE FROM items WHERE requisition_id IN (SELECT id FROM requisitions WHERE requestor_id = ?)', [testUserId]);
+      await query('DELETE FROM requisitions WHERE requestor_id = ?', [testUserId]);
       await query("DELETE FROM users WHERE email LIKE 'test.%'");
     } catch (err) { /* ignore cleanup errors */ }
   });
@@ -58,11 +60,9 @@ const conditionalDescribe = dbAvailable ? describe : describe.skip;
 if (!dbAvailable) {
   beforeAll(() => {
     console.warn('WARN: Database not available - API integration tests are skipped.');
-    console.warn(`  To run all tests, start PostgreSQL at: ${process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/cmes_requisitions'}`);
+    console.warn(`  To run all tests, start MySQL/TiDB at: ${process.env.DATABASE_URL || 'mysql://root:root@localhost:3306/cmes_requisitions'}`);
   });
 }
-
-// ─── Tests ──────────────────────────────────────────────
 
 describe('API Health', () => {
   test('GET /api/health returns ok', async () => {

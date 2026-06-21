@@ -5,7 +5,6 @@ const cryptoService = require('../services/cryptoService');
 const emailService = require('../services/emailService');
 const { logAudit } = require('../services/auditService');
 
-// List requisitions with filters
 async function list(req, res) {
   try {
     let sql = `
@@ -15,23 +14,19 @@ async function list(req, res) {
       WHERE 1=1
     `;
     const params = [];
-    let paramIdx = 1;
 
-    // Filter by status
     if (req.query.status) {
-      sql += ` AND r.status = $${paramIdx++}`;
+      sql += ` AND r.status = ?`;
       params.push(req.query.status);
     }
 
-    // Filter by requestor
     if (req.query.my === 'true') {
-      sql += ` AND r.requestor_id = $${paramIdx++}`;
+      sql += ` AND r.requestor_id = ?`;
       params.push(req.user.id);
     }
 
-    // Filter by type
     if (req.query.type) {
-      sql += ` AND r.type = $${paramIdx++}`;
+      sql += ` AND r.type = ?`;
       params.push(req.query.type);
     }
 
@@ -39,9 +34,8 @@ async function list(req, res) {
 
     const result = await query(sql, params);
 
-    // Get items for each requisition
     const requisitions = await Promise.all(result.rows.map(async (r) => {
-      const itemsResult = await query('SELECT * FROM items WHERE requisition_id = $1', [r.id]);
+      const itemsResult = await query('SELECT * FROM items WHERE requisition_id = ?', [r.id]);
       return { ...r, items: itemsResult.rows };
     }));
 
@@ -52,14 +46,13 @@ async function list(req, res) {
   }
 }
 
-// Get single requisition with full details
 async function getById(req, res) {
   try {
     const result = await query(
       `SELECT r.*, u.name as requestor_name
        FROM requisitions r
        JOIN users u ON r.requestor_id = u.id
-       WHERE r.req_id = $1`,
+       WHERE r.req_id = ?`,
       [req.params.id]
     );
 
@@ -68,12 +61,12 @@ async function getById(req, res) {
     }
 
     const r = result.rows[0];
-    const itemsResult = await query('SELECT * FROM items WHERE requisition_id = $1', [r.id]);
+    const itemsResult = await query('SELECT * FROM items WHERE requisition_id = ?', [r.id]);
     const approvalsResult = await query(
       `SELECT a.*, u.name as user_name, u.role as user_role
        FROM approvals a
        JOIN users u ON a.user_id = u.id
-       WHERE a.requisition_id = $1
+       WHERE a.requisition_id = ?
        ORDER BY a.timestamp ASC`,
       [r.id]
     );
@@ -91,7 +84,6 @@ async function getById(req, res) {
   }
 }
 
-// Create new requisition
 async function create(req, res) {
   try {
     const { type, title, department, currency, items } = req.body;
@@ -106,43 +98,42 @@ async function create(req, res) {
 
     const totalAmount = items.reduce((sum, it) => sum + (it.quantity * it.unitPrice), 0);
 
-    // Generate unique req_id
-    const countResult = await query('SELECT COUNT(*) FROM requisitions');
+    const countResult = await query('SELECT COUNT(*) as count FROM requisitions');
     const count = parseInt(countResult.rows[0].count) + 1;
     const reqId = generateReqId('2026', count);
 
     const r = await transaction(async (client) => {
       const reqResult = await client.query(
         `INSERT INTO requisitions (req_id, type, title, department, requestor_id, currency, status, total_amount)
-         VALUES ($1, $2, $3, $4, $5, $6, 'Pending', $7)
-         RETURNING *`,
+         VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)`,
         [reqId, type, title, department, req.user.id, currency, totalAmount]
       );
 
-      const requisition = reqResult.rows[0];
+      const dbReq = await client.query(
+        'SELECT * FROM requisitions WHERE id = ?',
+        [reqResult.insertId]
+      );
+      const requisition = dbReq.rows[0];
 
-      // Insert items
       for (const it of items) {
         await client.query(
           `INSERT INTO items (requisition_id, description, category, quantity, unit_price, total_price)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+           VALUES (?, ?, ?, ?, ?, ?)`,
           [requisition.id, it.description, it.category, it.quantity, it.unitPrice, it.quantity * it.unitPrice]
         );
       }
 
-      // Record creation in approvals table
       await client.query(
         `INSERT INTO approvals (requisition_id, stage, action, user_id, timestamp)
-         VALUES ($1, 'Pending', 'Created', $2, NOW())`,
+         VALUES (?, 'Pending', 'Created', ?, NOW())`,
         [requisition.id, req.user.id]
       );
 
-      return requisition;
+      return { ...requisition, items };
     });
 
-    // Notify 1st Approver
     const fullReq = (await query(
-      `SELECT r.*, u.name as requestor_name FROM requisitions r JOIN users u ON r.requestor_id = u.id WHERE r.id = $1`,
+      `SELECT r.*, u.name as requestor_name FROM requisitions r JOIN users u ON r.requestor_id = u.id WHERE r.id = ?`,
       [r.id]
     )).rows[0];
     fullReq.items = items;
@@ -151,7 +142,7 @@ async function create(req, res) {
 
     res.status(201).json({
       message: `Requisition ${reqId} created successfully`,
-      requisition: { ...r, items }
+      requisition: r
     });
 
     logAudit({
@@ -165,7 +156,6 @@ async function create(req, res) {
   }
 }
 
-// Process approval or rejection
 async function processApproval(req, res) {
   try {
     const { action, reason } = req.body;
@@ -179,7 +169,7 @@ async function processApproval(req, res) {
       `SELECT r.*, u.name as requestor_name
        FROM requisitions r
        JOIN users u ON r.requestor_id = u.id
-       WHERE r.req_id = $1`,
+       WHERE r.req_id = ?`,
       [reqId]
     );
 
@@ -209,13 +199,13 @@ async function processApproval(req, res) {
       }
 
       await query(
-        `UPDATE requisitions SET status = 'Rejected', rejection_reason = $1, updated_at = NOW() WHERE id = $2`,
+        `UPDATE requisitions SET status = 'Rejected', rejection_reason = ?, updated_at = NOW() WHERE id = ?`,
         [reason, requisition.id]
       );
 
       await query(
         `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
-         VALUES ($1, $2, 'Rejected', $3, $4, NOW())`,
+         VALUES (?, ?, 'Rejected', ?, ?, NOW())`,
         [requisition.id, requisition.status, req.user.id, reason]
       );
 
@@ -234,7 +224,6 @@ async function processApproval(req, res) {
       return;
     }
 
-    // Approve
     const nextIndex = currentIndex + 1;
     if (nextIndex >= flow.length) {
       return res.status(400).json({ error: 'No further approval stages' });
@@ -243,7 +232,6 @@ async function processApproval(req, res) {
     const nextState = flow[nextIndex];
     const timestamp = formatTimestamp();
 
-    // Generate cryptographic signature
     const sig = cryptoService.createVerificationPayload(
       reqId,
       req.user.name,
@@ -252,11 +240,11 @@ async function processApproval(req, res) {
       timestamp
     );
 
-    await query(`UPDATE requisitions SET status = $1, updated_at = NOW() WHERE id = $2`, [nextState, requisition.id]);
+    await query(`UPDATE requisitions SET status = ?, updated_at = NOW() WHERE id = ?`, [nextState, requisition.id]);
 
     await query(
       `INSERT INTO approvals (requisition_id, stage, action, user_id, signature, public_key_pem, timestamp, reason)
-       VALUES ($1, $2, 'Approved', $3, $4, $5, NOW(), $6)`,
+       VALUES (?, ?, 'Approved', ?, ?, ?, NOW(), ?)`,
       [
         requisition.id,
         requisition.status,
@@ -287,7 +275,6 @@ async function processApproval(req, res) {
   }
 }
 
-// Treasurer: Queue for disbursement
 async function queueDisbursement(req, res) {
   try {
     const reqId = req.params.id;
@@ -296,7 +283,7 @@ async function queueDisbursement(req, res) {
       `SELECT r.*, u.name as requestor_name
        FROM requisitions r
        JOIN users u ON r.requestor_id = u.id
-       WHERE r.req_id = $1`,
+       WHERE r.req_id = ?`,
       [reqId]
     );
 
@@ -310,11 +297,11 @@ async function queueDisbursement(req, res) {
       return res.status(400).json({ error: 'Requisition must be at Final Approver stage' });
     }
 
-    await query(`UPDATE requisitions SET status = 'Pending Disbursement', updated_at = NOW() WHERE id = $1`, [requisition.id]);
+    await query(`UPDATE requisitions SET status = 'Pending Disbursement', updated_at = NOW() WHERE id = ?`, [requisition.id]);
 
     await query(
       `INSERT INTO approvals (requisition_id, stage, action, user_id, timestamp)
-       VALUES ($1, 'Final Approver', 'Queued for Disbursement', $2, NOW())`,
+       VALUES (?, 'Final Approver', 'Queued for Disbursement', ?, NOW())`,
       [requisition.id, req.user.id]
     );
 
@@ -334,7 +321,6 @@ async function queueDisbursement(req, res) {
   }
 }
 
-// Treasurer: Disburse funds
 async function disburse(req, res) {
   try {
     const reqId = req.params.id;
@@ -343,7 +329,7 @@ async function disburse(req, res) {
       `SELECT r.*, u.name as requestor_name
        FROM requisitions r
        JOIN users u ON r.requestor_id = u.id
-       WHERE r.req_id = $1`,
+       WHERE r.req_id = ?`,
       [reqId]
     );
 
@@ -357,11 +343,11 @@ async function disburse(req, res) {
       return res.status(400).json({ error: 'Requisition must be at Pending Disbursement stage' });
     }
 
-    await query(`UPDATE requisitions SET status = 'Issued', updated_at = NOW() WHERE id = $1`, [requisition.id]);
+    await query(`UPDATE requisitions SET status = 'Issued', updated_at = NOW() WHERE id = ?`, [requisition.id]);
 
     await query(
       `INSERT INTO approvals (requisition_id, stage, action, user_id, timestamp)
-       VALUES ($1, 'Pending Disbursement', 'Disbursed', $2, NOW())`,
+       VALUES (?, 'Pending Disbursement', 'Disbursed', ?, NOW())`,
       [requisition.id, req.user.id]
     );
 
@@ -381,7 +367,6 @@ async function disburse(req, res) {
   }
 }
 
-// Requestor: Submit receipts
 async function submitReceipts(req, res) {
   try {
     const reqId = req.params.id;
@@ -391,7 +376,7 @@ async function submitReceipts(req, res) {
       `SELECT r.*, u.name as requestor_name
        FROM requisitions r
        JOIN users u ON r.requestor_id = u.id
-       WHERE r.req_id = $1`,
+       WHERE r.req_id = ?`,
       [reqId]
     );
 
@@ -408,11 +393,11 @@ async function submitReceipts(req, res) {
       return res.status(403).json({ error: 'Only the original requestor can submit receipts' });
     }
 
-    await query(`UPDATE requisitions SET status = 'Change Returned/Pending', updated_at = NOW() WHERE id = $1`, [requisition.id]);
+    await query(`UPDATE requisitions SET status = 'Change Returned/Pending', updated_at = NOW() WHERE id = ?`, [requisition.id]);
 
     await query(
       `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
-       VALUES ($1, 'Issued', 'Expenses Submitted', $2, $3, NOW())`,
+       VALUES (?, 'Issued', 'Expenses Submitted', ?, ?, NOW())`,
       [requisition.id, req.user.id, notes || 'Receipts submitted']
     );
 
@@ -432,7 +417,6 @@ async function submitReceipts(req, res) {
   }
 }
 
-// Treasurer: Clear
 async function clearRequisition(req, res) {
   try {
     const reqId = req.params.id;
@@ -441,7 +425,7 @@ async function clearRequisition(req, res) {
       `SELECT r.*, u.name as requestor_name
        FROM requisitions r
        JOIN users u ON r.requestor_id = u.id
-       WHERE r.req_id = $1`,
+       WHERE r.req_id = ?`,
       [reqId]
     );
 
@@ -455,11 +439,11 @@ async function clearRequisition(req, res) {
       return res.status(400).json({ error: 'Requisition must be at Change Returned/Pending stage' });
     }
 
-    await query(`UPDATE requisitions SET status = 'Change Cleared', updated_at = NOW() WHERE id = $1`, [requisition.id]);
+    await query(`UPDATE requisitions SET status = 'Change Cleared', updated_at = NOW() WHERE id = ?`, [requisition.id]);
 
     await query(
       `INSERT INTO approvals (requisition_id, stage, action, user_id, timestamp)
-       VALUES ($1, 'Change Returned/Pending', 'Cleared', $2, NOW())`,
+       VALUES (?, 'Change Returned/Pending', 'Cleared', ?, NOW())`,
       [requisition.id, req.user.id]
     );
 
@@ -476,7 +460,6 @@ async function clearRequisition(req, res) {
   }
 }
 
-// Get pending actions for current user
 async function pendingActions(req, res) {
   try {
     const userRole = req.user.role;
@@ -489,39 +472,35 @@ async function pendingActions(req, res) {
       AND r.status != 'Change Cleared'
     `;
 
-    // Map based on STATUS_ACTOR_MAP
     const statuses = Object.entries(STATUS_ACTOR_MAP)
       .filter(([_, role]) => role === userRole)
       .map(([status]) => status);
 
     if (statuses.length === 0) {
-      // Check for special "Issued" for Requestor
       if (userRole === 'Requestor') {
-        sql += ` AND r.status = 'Issued' AND r.requestor_id = $1`;
+        sql += ` AND r.status = 'Issued' AND r.requestor_id = ?`;
         const result = await query(sql, [req.user.id]);
         return res.json({ requisitions: result.rows });
       }
       return res.json({ requisitions: [] });
     }
 
-    sql += ` AND (r.status = ANY($1)`;
+    const placeholders = statuses.map(() => '?').join(', ');
+    sql += ` AND (r.status IN (${placeholders})`;
 
-    // Handle Shop Use special case
     if (userRole === 'Final Approver') {
       sql += ` OR (r.status = '1st Approver stage' AND r.type = 'Shop Use')`;
     }
 
     sql += `)`;
 
-    // Requestor special case
     if (userRole === 'Requestor') {
-      sql += ` AND r.requestor_id = $2`;
-      const result = await query(sql, [statuses, req.user.id]);
+      sql += ` AND r.requestor_id = ?`;
+      const result = await query(sql, [...statuses, req.user.id]);
       return res.json({ requisitions: result.rows });
     }
 
-    const result = await query(sql, [statuses]);
-
+    const result = await query(sql, statuses);
     res.json({ requisitions: result.rows });
   } catch (err) {
     console.error('Pending actions error:', err);
@@ -529,7 +508,6 @@ async function pendingActions(req, res) {
   }
 }
 
-// Verify QR code signature
 async function verifyQR(req, res) {
   try {
     const { qrData } = req.body;

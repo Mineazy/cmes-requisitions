@@ -16,8 +16,8 @@ async function getStats(req, res) {
       userCount, reqCount, statusCounts, recentReqs,
       zmwTotal, usdTotal, roleCounts
     ] = await Promise.all([
-      query('SELECT COUNT(*) FROM users'),
-      query('SELECT COUNT(*) FROM requisitions'),
+      query('SELECT COUNT(*) as count FROM users'),
+      query('SELECT COUNT(*) as count FROM requisitions'),
       query('SELECT status, COUNT(*) as count FROM requisitions GROUP BY status ORDER BY status'),
       query(`
         SELECT r.req_id, r.title, r.status, r.type, r.total_amount, r.created_at,
@@ -77,7 +77,7 @@ async function createUser(req, res) {
       return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` });
     }
 
-    const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+    const existing = await query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'A user with this email already exists' });
     }
@@ -85,15 +85,21 @@ async function createUser(req, res) {
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
     const result = await query(
       `INSERT INTO users (name, email, role, department, password_hash)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, department, created_at`,
+       VALUES (?, ?, ?, ?, ?)`,
       [name, email, role, department || '', hash]
     );
 
-    res.status(201).json({ user: result.rows[0] });
+    const userId = result.insertId;
+    const userRes = await query(
+      'SELECT id, name, email, role, department, created_at FROM users WHERE id = ?',
+      [userId]
+    );
+
+    res.status(201).json({ user: userRes.rows[0] });
 
     await logAudit({
       userId: req.user.id, userName: req.user.name, userRole: req.user.role,
-      action: 'CREATE_USER', entityType: 'user', entityId: String(result.rows[0].id),
+      action: 'CREATE_USER', entityType: 'user', entityId: String(userId),
       details: `Created user "${name}" (${role})`
     });
   } catch (err) {
@@ -107,7 +113,7 @@ async function updateUser(req, res) {
     const userId = req.params.id;
     const { name, email, role, department } = req.body;
 
-    const existing = await query('SELECT id FROM users WHERE id = $1', [userId]);
+    const existing = await query('SELECT id, name FROM users WHERE id = ?', [userId]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -117,25 +123,29 @@ async function updateUser(req, res) {
     }
 
     if (email) {
-      const emailConflict = await query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, userId]);
+      const emailConflict = await query('SELECT id FROM users WHERE email = ? AND id != ?', [email, userId]);
       if (emailConflict.rows.length > 0) {
         return res.status(409).json({ error: 'Email already in use' });
       }
     }
 
-    const result = await query(
+    await query(
       `UPDATE users SET
-        name = COALESCE($1, name),
-        email = COALESCE($2, email),
-        role = COALESCE($3, role),
-        department = COALESCE($4, department),
+        name = COALESCE(?, name),
+        email = COALESCE(?, email),
+        role = COALESCE(?, role),
+        department = COALESCE(?, department),
         updated_at = NOW()
-       WHERE id = $5
-       RETURNING id, name, email, role, department, created_at`,
+       WHERE id = ?`,
       [name || null, email || null, role || null, department !== undefined ? department : null, userId]
     );
 
-    res.json({ user: result.rows[0] });
+    const userRes = await query(
+      'SELECT id, name, email, role, department, created_at FROM users WHERE id = ?',
+      [userId]
+    );
+
+    res.json({ user: userRes.rows[0] });
 
     await logAudit({
       userId: req.user.id, userName: req.user.name, userRole: req.user.role,
@@ -157,13 +167,13 @@ async function resetPassword(req, res) {
       return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` });
     }
 
-    const existing = await query('SELECT id FROM users WHERE id = $1', [userId]);
+    const existing = await query('SELECT id FROM users WHERE id = ?', [userId]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
+    await query('UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?', [hash, userId]);
 
     res.json({ message: 'Password reset successfully' });
 
@@ -187,31 +197,30 @@ async function getAllRequisitions(req, res) {
       WHERE 1=1
     `;
     const params = [];
-    let paramIdx = 1;
 
     if (req.query.status) {
-      sql += ` AND r.status = $${paramIdx++}`;
+      sql += ` AND r.status = ?`;
       params.push(req.query.status);
     }
     if (req.query.type) {
-      sql += ` AND r.type = $${paramIdx++}`;
+      sql += ` AND r.type = ?`;
       params.push(req.query.type);
     }
     if (req.query.requestor_id) {
-      sql += ` AND r.requestor_id = $${paramIdx++}`;
+      sql += ` AND r.requestor_id = ?`;
       params.push(req.query.requestor_id);
     }
     if (req.query.search) {
-      sql += ` AND (r.title ILIKE $${paramIdx} OR r.req_id ILIKE $${paramIdx} OR u.name ILIKE $${paramIdx})`;
-      params.push(`%${req.query.search}%`);
-      paramIdx++;
+      sql += ` AND (r.title LIKE ? OR r.req_id LIKE ? OR u.name LIKE ?)`;
+      const p = `%${req.query.search}%`;
+      params.push(p, p, p);
     }
 
     sql += ' ORDER BY r.created_at DESC';
 
     const result = await query(sql, params);
     const requisitions = await Promise.all(result.rows.map(async (r) => {
-      const itemsResult = await query('SELECT * FROM items WHERE requisition_id = $1', [r.id]);
+      const itemsResult = await query('SELECT * FROM items WHERE requisition_id = ?', [r.id]);
       return { ...r, items: itemsResult.rows };
     }));
 
@@ -269,7 +278,7 @@ async function deleteUser(req, res) {
   try {
     const userId = req.params.id;
 
-    const existing = await query('SELECT id, name, role FROM users WHERE id = $1', [userId]);
+    const existing = await query('SELECT id, name, role FROM users WHERE id = ?', [userId]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -278,12 +287,11 @@ async function deleteUser(req, res) {
       return res.status(403).json({ error: 'Cannot delete an Admin user' });
     }
 
-    // Nullify foreign key references before deleting the user
-    await query('UPDATE requisitions SET requestor_id = NULL WHERE requestor_id = $1', [userId]);
-    await query('UPDATE approvals SET user_id = NULL WHERE user_id = $1', [userId]);
-    await query('UPDATE audit_logs SET user_id = NULL WHERE user_id = $1', [userId]);
+    await query('UPDATE requisitions SET requestor_id = NULL WHERE requestor_id = ?', [userId]);
+    await query('UPDATE approvals SET user_id = NULL WHERE user_id = ?', [userId]);
+    await query('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?', [userId]);
 
-    await query('DELETE FROM users WHERE id = $1', [userId]);
+    await query('DELETE FROM users WHERE id = ?', [userId]);
 
     await logAudit({
       userId: req.user.id, userName: req.user.name, userRole: req.user.role,

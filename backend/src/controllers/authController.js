@@ -13,7 +13,7 @@ async function login(req, res) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await query('SELECT * FROM users WHERE email = ?', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -52,7 +52,7 @@ async function login(req, res) {
 async function getProfile(req, res) {
   try {
     const result = await query(
-      'SELECT id, name, email, role, department, created_at FROM users WHERE id = $1',
+      'SELECT id, name, email, role, department, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -79,7 +79,7 @@ async function changePassword(req, res) {
       return res.status(400).json({ error: 'New password must be at least 8 characters' });
     }
 
-    const result = await query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const result = await query('SELECT * FROM users WHERE id = ?', [req.user.id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -92,7 +92,7 @@ async function changePassword(req, res) {
     }
 
     const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, req.user.id]);
+    await query('UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?', [hash, req.user.id]);
 
     res.json({ message: 'Password changed successfully' });
 

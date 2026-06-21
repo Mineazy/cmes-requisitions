@@ -15,7 +15,7 @@ async function listUsers(req, res) {
 async function getUserById(req, res) {
   try {
     const result = await query(
-      'SELECT id, name, email, role, department, created_at FROM users WHERE id = $1',
+      'SELECT id, name, email, role, department, created_at FROM users WHERE id = ?',
       [req.params.id]
     );
     if (result.rows.length === 0) {

@@ -4,7 +4,7 @@ async function logAudit({ userId, userName, userRole, action, entityType, entity
   try {
     await query(
       `INSERT INTO audit_logs (user_id, user_name, user_role, action, entity_type, entity_id, details)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [userId || null, userName || 'System', userRole || 'System', action, entityType || null, entityId || null, details || null]
     );
   } catch (err) {
@@ -17,10 +17,10 @@ async function getAuditLogs({ limit = 50, offset = 0 } = {}) {
     `SELECT id, user_id, user_name, user_role, action, entity_type, entity_id, details, created_at
      FROM audit_logs
      ORDER BY created_at DESC
-     LIMIT $1 OFFSET $2`,
+     LIMIT ? OFFSET ?`,
     [limit, offset]
   );
-  const countResult = await query('SELECT COUNT(*) FROM audit_logs');
+  const countResult = await query('SELECT COUNT(*) as count FROM audit_logs');
   return { logs: result.rows, total: parseInt(countResult.rows[0].count) };
 }
 

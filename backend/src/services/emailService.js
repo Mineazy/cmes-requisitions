@@ -30,16 +30,17 @@ const RECONCILIATION_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER;
 async function createEmail({ from, to, recipientName, subject, body, reqId, targetRole }) {
   const result = await query(
     `INSERT INTO emails (from_address, to_address, recipient_name, subject, body, req_id, target_role, timestamp)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-     RETURNING *`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
     [from, to, recipientName, subject, body, reqId, targetRole]
   );
+
+  const emailResult = await query('SELECT * FROM emails WHERE id = ?', [result.insertId]);
 
   sendEmail({ to, subject, body }).catch(err => {
     console.error(`SMTP send failed for "${subject}" to ${to}:`, err.message);
   });
 
-  return result.rows[0];
+  return emailResult.rows[0];
 }
 
 async function notifyNextApprover(req) {
@@ -53,7 +54,7 @@ async function notifyNextApprover(req) {
     targetRole = 'Final Approver';
   }
 
-  const userResult = await query('SELECT * FROM users WHERE role = $1 LIMIT 1', [targetRole]);
+  const userResult = await query('SELECT * FROM users WHERE role = ? LIMIT 1', [targetRole]);
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];
@@ -74,7 +75,7 @@ async function notifyNextApprover(req) {
 }
 
 async function notifyRejection(req) {
-  const userResult = await query('SELECT * FROM users WHERE id = $1', [req.requestor_id]);
+  const userResult = await query('SELECT * FROM users WHERE id = ?', [req.requestor_id]);
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];
@@ -93,7 +94,7 @@ async function notifyRejection(req) {
 }
 
 async function notifyDisbursement(req) {
-  const userResult = await query('SELECT * FROM users WHERE id = $1', [req.requestor_id]);
+  const userResult = await query('SELECT * FROM users WHERE id = ?', [req.requestor_id]);
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];
@@ -118,7 +119,7 @@ async function notifyClearanceRequired(req) {
   const recipient = userResult.rows[0];
 
   const lastApproval = await query(
-    'SELECT * FROM approvals WHERE requisition_id = $1 ORDER BY timestamp DESC LIMIT 1',
+    'SELECT * FROM approvals WHERE requisition_id = ? ORDER BY timestamp DESC LIMIT 1',
     [req.id]
   );
 

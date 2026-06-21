@@ -2,12 +2,10 @@ const { query } = require('../config/database');
 
 async function listEmails(req, res) {
   try {
-    // Return emails where the recipient role matches the user's role
-    // or if the user is a Requestor, emails for them specifically
     const result = await query(
       `SELECT e.* FROM emails e
-       WHERE e.target_role = $1
-          OR e.to_address = (SELECT email FROM users WHERE id = $2)
+       WHERE e.target_role = ?
+          OR e.to_address = (SELECT email FROM users WHERE id = ?)
        ORDER BY e.timestamp DESC`,
       [req.user.role, req.user.id]
     );
@@ -21,10 +19,12 @@ async function listEmails(req, res) {
 
 async function markAsRead(req, res) {
   try {
-    const result = await query(
-      `UPDATE emails SET read = true WHERE id = $1 RETURNING *`,
+    await query(
+      `UPDATE emails SET read = true WHERE id = ?`,
       [req.params.id]
     );
+
+    const result = await query('SELECT * FROM emails WHERE id = ?', [req.params.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Email not found' });
