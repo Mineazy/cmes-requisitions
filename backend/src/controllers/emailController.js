@@ -20,7 +20,7 @@ async function listEmails(req, res) {
 async function markAsRead(req, res) {
   try {
     await query(
-      `UPDATE emails SET `read` = true WHERE id = ?`,
+      `UPDATE emails SET is_read = true WHERE id = ?`,
       [req.params.id]
     );
 

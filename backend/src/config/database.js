@@ -175,7 +175,7 @@ async function initializeDatabase() {
       body TEXT,
       req_id VARCHAR(50),
       target_role VARCHAR(50),
-      `read` TINYINT(1) DEFAULT 0,
+      is_read TINYINT(1) DEFAULT 0,
       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
