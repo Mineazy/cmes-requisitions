@@ -2,46 +2,44 @@ const mysql = require('mysql2/promise');
 
 let pool = null;
 
+function getPoolConfig() {
+  const url = process.env.DATABASE_URL || '';
+  const dbUser = process.env.DB_USER;
+  const dbPass = process.env.DB_PASSWORD;
+  const dbHost = process.env.DB_HOST;
+  const dbPort = process.env.DB_PORT || '4000';
+  const dbName = process.env.DB_NAME || 'cmes_requisitions';
+
+  const base = {
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
+  };
+
+  let config;
+  let sslEnabled = false;
+
+  if (dbUser && dbPass && dbHost) {
+    config = { ...base, host: dbHost, port: parseInt(dbPort), user: dbUser, password: dbPass, database: dbName };
+    sslEnabled = process.env.DB_SSL === 'true';
+  } else if (url) {
+    config = { ...base, uri: url };
+    sslEnabled = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
+  } else {
+    config = { ...base, host: 'localhost', port: 3306, user: 'root', password: '', database: 'cmes_requisitions' };
+  }
+
+  if (sslEnabled) {
+    config.ssl = { rejectUnauthorized: true };
+  }
+  return { config, dbName };
+}
+
 function getPool() {
   if (!pool) {
-    const url = process.env.DATABASE_URL || '';
-    const dbUser = process.env.DB_USER;
-    const dbPass = process.env.DB_PASSWORD;
-    const dbHost = process.env.DB_HOST;
-    const dbPort = process.env.DB_PORT || '4000';
-    const dbName = process.env.DB_NAME || 'cmes_requisitions';
-
-    let sslEnabled = false;
-    let config;
-
-    if (dbUser && dbPass && dbHost) {
-      console.log(`Connecting to TiDB: host=${dbHost} port=${dbPort} user=${dbUser} database=${dbName} ssl=${process.env.DB_SSL}`);
-      config = {
-        host: dbHost,
-        port: parseInt(dbPort),
-        user: dbUser,
-        password: dbPass,
-        database: dbName,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0
-      };
-      sslEnabled = process.env.DB_SSL === 'true';
-    } else if (url) {
-      console.log('Connecting via DATABASE_URL');
-      config = { uri: url, waitForConnections: true, connectionLimit: 10, queueLimit: 0, enableKeepAlive: true, keepAliveInitialDelay: 0 };
-      sslEnabled = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
-    } else {
-      console.log('Connecting with default localhost credentials');
-      config = { host: 'localhost', port: 3306, user: 'root', password: '', database: 'cmes_requisitions', waitForConnections: true, connectionLimit: 10, queueLimit: 0, enableKeepAlive: true, keepAliveInitialDelay: 0 };
-    }
-
-    if (sslEnabled) {
-      config.ssl = { rejectUnauthorized: true };
-    }
-
+    const { config } = getPoolConfig();
     pool = mysql.createPool(config);
     pool.on('error', (err) => {
       console.error('Unexpected database pool error:', err);
@@ -81,6 +79,18 @@ async function transaction(callback) {
 }
 
 async function initializeDatabase() {
+  // Bootstrap: ensure database exists (connect without a specific database)
+  const { config, dbName } = getPoolConfig();
+  const { database: _, ...bootstrapConfig } = config;
+  const bootstrapConn = await mysql.createConnection(bootstrapConfig);
+  try {
+    await bootstrapConn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+    console.log(`Database "${dbName}" ensured`);
+  } catch (err) {
+    console.warn('Could not auto-create database:', err.message);
+  }
+  await bootstrapConn.end();
+
   const schema = `
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -99,7 +109,7 @@ async function initializeDatabase() {
       type VARCHAR(50) NOT NULL,
       title VARCHAR(255) NOT NULL,
       department VARCHAR(255),
-      requestor_id INT REFERENCES users(id),
+      requestor_id INT,
       currency VARCHAR(10) NOT NULL,
       status VARCHAR(100) NOT NULL DEFAULT 'Pending',
       rejection_reason TEXT,
@@ -110,7 +120,7 @@ async function initializeDatabase() {
 
     CREATE TABLE IF NOT EXISTS items (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      requisition_id INT REFERENCES requisitions(id) ON DELETE CASCADE,
+      requisition_id INT,
       description TEXT NOT NULL,
       category VARCHAR(100),
       quantity INT NOT NULL,
@@ -120,10 +130,10 @@ async function initializeDatabase() {
 
     CREATE TABLE IF NOT EXISTS approvals (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      requisition_id INT REFERENCES requisitions(id) ON DELETE CASCADE,
+      requisition_id INT,
       stage VARCHAR(100),
       action VARCHAR(50) NOT NULL,
-      user_id INT REFERENCES users(id),
+      user_id INT,
       reason TEXT,
       signature TEXT,
       public_key_pem TEXT,
@@ -145,7 +155,7 @@ async function initializeDatabase() {
 
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT REFERENCES users(id),
+      user_id INT,
       user_name VARCHAR(255) NOT NULL,
       user_role VARCHAR(50) NOT NULL,
       action VARCHAR(100) NOT NULL,
@@ -154,17 +164,27 @@ async function initializeDatabase() {
       details TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    CREATE INDEX IF NOT EXISTS idx_requisitions_status ON requisitions(status);
-    CREATE INDEX IF NOT EXISTS idx_requisitions_requestor ON requisitions(requestor_id);
-    CREATE INDEX IF NOT EXISTS idx_approvals_requisition ON approvals(requisition_id);
-    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
   `;
 
   const statements = schema.split(';').filter(s => s.trim());
   for (const stmt of statements) {
-    await query(stmt);
+    try {
+      await query(stmt);
+    } catch (err) {
+      console.error('Schema init error:', err.message);
+      throw err;
+    }
   }
+
+  // Create indexes separately (IF NOT EXISTS for indexes is MySQL 8+; TiDB supports it)
+  try {
+    await query('CREATE INDEX IF NOT EXISTS idx_requisitions_status ON requisitions(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_requisitions_requestor ON requisitions(requestor_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_approvals_requisition ON approvals(requisition_id)');
+  } catch (err) {
+    console.warn('Index creation note:', err.message);
+  }
+
   console.log('Database schema initialized successfully');
 }
 
