@@ -58,7 +58,30 @@
 - Removed insecure `JWT_SECRET` fallback default from `docker-compose.yml` (now required via `${JWT_SECRET?}`).
 - **Files:** `backend/src/seed.js`, `backend/src/controllers/adminController.js`, `backend/src/controllers/authController.js`, `backend/package.json`, `backend/.env.example`, `docker-compose.yml`
 
-## 9. PostgreSQL → TiDB (MySQL) Database Migration
+## 9. Profile & Mobile Overhaul (Current Session)
+### Approver Restructuring
+- **Admin** (3 approvers): Purchasing HOD → Accounts HOD → Director → Treasurer
+- **Shop Use** (1 approver): Operations HOD → Treasurer
+- Removed `1st/2nd/3rd Approver` and `Final Approver` roles.
+- Added `Purchasing HOD`, `Accounts HOD`, `Director`, `Operations HOD` roles.
+- Updated `STATUS_FLOW`, `STATUS_ACTOR_MAP`, `VALID_ROLES`, all frontend/backend logic, tests, CSS avatar colors, and HTML role dropdowns.
+- **Files:** `backend/src/utils/constants.js`, `backend/src/controllers/adminController.js`, `backend/src/controllers/requisitionController.js`, `backend/src/services/emailService.js`, `app.js`, `index.html`, `index.css`, `backend/tests/api.test.js`, `backend/tests/cryptoService.test.js`
+
+### Profile View Overhaul
+- Completely redesigned from two-column grid layout → centered hero card design.
+- Avatar with user initials on copper gradient, name heading, role badge pill, metadata tags (email, dept, member since).
+- Change Password panel below hero card.
+- Added `.profile-container` with `max-width: 640px; margin: 0 auto` for centered layout.
+- **Files:** `index.html`, `index.css`, `app.js`
+
+### Mobile Experience
+- Sidebar changed from horizontal strip → overlay drawer sliding in from left.
+- Added dark backdrop when sidebar is open; tapping backdrop closes sidebar.
+- Header compacted to 56px on mobile with hamburger, logo, actions on one row.
+- JS updated to manage backdrop visibility.
+- **Files:** `index.html`, `index.css`, `app.js`
+
+## 10. PostgreSQL → TiDB (MySQL) Database Migration
 - Replaced `pg` with `mysql2` in `package.json`.
 - Rewrote `database.js`: `pg` Pool → `mysql2/promise` pool, SSL support, wrapped `query()`/`transaction()` for compatible `{ rows }` interface.
 - Rewrote all SQL queries across 10 files:
