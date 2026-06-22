@@ -15,6 +15,7 @@ function getPool() {
     let config;
 
     if (dbUser && dbPass && dbHost) {
+      console.log(`Connecting to TiDB: host=${dbHost} port=${dbPort} user=${dbUser} database=${dbName} ssl=${process.env.DB_SSL}`);
       config = {
         host: dbHost,
         port: parseInt(dbPort),
@@ -29,9 +30,11 @@ function getPool() {
       };
       sslEnabled = process.env.DB_SSL === 'true';
     } else if (url) {
+      console.log('Connecting via DATABASE_URL');
       config = { uri: url, waitForConnections: true, connectionLimit: 10, queueLimit: 0, enableKeepAlive: true, keepAliveInitialDelay: 0 };
       sslEnabled = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
     } else {
+      console.log('Connecting with default localhost credentials');
       config = { host: 'localhost', port: 3306, user: 'root', password: '', database: 'cmes_requisitions', waitForConnections: true, connectionLimit: 10, queueLimit: 0, enableKeepAlive: true, keepAliveInitialDelay: 0 };
     }
 
