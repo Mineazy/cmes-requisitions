@@ -133,15 +133,27 @@ function setupEventListeners() {
   document.getElementById('req-type').addEventListener('change', renderApprovalFlow);
   document.getElementById('req-currency').addEventListener('change', updateCurrencyDisplay);
   const menuBtn = document.getElementById('mobile-menu-btn');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  function closeMobileSidebar() {
+    document.querySelector('aside').classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+  function openMobileSidebar() {
+    document.querySelector('aside').classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+  }
   if (menuBtn) {
     menuBtn.addEventListener('click', () => {
-      document.querySelector('aside').classList.toggle('mobile-open');
+      const aside = document.querySelector('aside');
+      const isOpen = aside.classList.contains('mobile-open');
+      if (isOpen) closeMobileSidebar(); else openMobileSidebar();
     });
     document.querySelectorAll('.nav-item').forEach(el => {
-      el.addEventListener('click', () => {
-        document.querySelector('aside').classList.remove('mobile-open');
-      });
+      el.addEventListener('click', closeMobileSidebar);
     });
+    if (backdrop) {
+      backdrop.addEventListener('click', closeMobileSidebar);
+    }
   }
   document.getElementById('sidebar-collapse-btn').addEventListener('click', () => {
     const aside = document.querySelector('aside');

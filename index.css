@@ -1781,68 +1781,72 @@ main {
   display: block;
 }
 
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sidebar-backdrop.active {
+    opacity: 1;
+    pointer-events: all;
+  }
   .mobile-menu-btn {
     display: flex;
     align-items: center;
     justify-content: center;
   }
   aside {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100vh;
+    z-index: 1000;
+    border-right: 1px solid var(--border-color);
+    padding: 24px 16px;
+    transition: left 0.3s ease;
+    display: flex;
   }
   aside.mobile-open {
-    display: block;
+    left: 0;
   }
   aside .sidebar-collapse-btn,
   aside .sidebar-footer {
     display: none !important;
   }
   #app-container {
-    flex-direction: column;
-  }
-  aside {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    padding: 8px 12px;
-    height: auto;
-    overflow-x: auto;
-  }
-  .nav-links {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 4px;
-    padding: 0;
-  }
-  .nav-links li {
-    flex-shrink: 0;
-  }
-  .nav-item button {
-    padding: 6px 10px;
-    font-size: 0.75rem;
-    gap: 4px;
-  }
-  .nav-item button svg {
-    width: 14px;
-    height: 14px;
+    height: calc(100vh - 56px);
   }
   header {
-    flex-direction: column;
-    height: auto;
-    padding: 12px 16px;
-    gap: 8px;
+    padding: 8px 16px;
+    height: 56px;
   }
-  header .header-left h1 {
+  header > div:first-child {
+    flex: 1;
+  }
+  .logo-text h1 {
     font-size: 1rem;
   }
-  .header-right {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 6px;
+  .logo-text span {
+    font-size: 0.6rem;
   }
-  .flex-break {
-    width: 100%;
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .logo-icon svg {
+    width: 18px;
+    height: 18px;
   }
   main {
     padding: 12px;
@@ -2031,16 +2035,6 @@ main {
   }
   .admin-stats-grid {
     grid-template-columns: 1fr;
-  }
-  .nav-links {
-    gap: 2px;
-  }
-  .nav-item button {
-    padding: 5px 8px;
-    font-size: 0.7rem;
-  }
-  .nav-item button span {
-    display: none;
   }
   .view-title-block h2 {
     font-size: 1rem;
