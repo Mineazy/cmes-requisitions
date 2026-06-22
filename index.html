@@ -355,51 +355,53 @@
             <div><h2>My Profile</h2></div>
           </div>
 
-          <div class="profile-hero">
-            <div class="profile-avatar" id="profile-avatar">JD</div>
-            <div class="profile-hero-body">
-              <h2 class="profile-name" id="profile-name">-</h2>
-              <span class="profile-role-badge" id="profile-role">-</span>
-              <div class="profile-meta">
-                <div class="profile-meta-item">
-                  <span class="meta-label">Email</span>
-                  <span class="meta-value" id="profile-email">-</span>
-                </div>
-                <div class="profile-meta-item">
-                  <span class="meta-label">Department</span>
-                  <span class="meta-value" id="profile-dept">-</span>
-                </div>
-                <div class="profile-meta-item">
-                  <span class="meta-label">Member Since</span>
-                  <span class="meta-value" id="profile-created">-</span>
+          <div class="profile-container">
+            <div class="profile-hero">
+              <div class="profile-avatar" id="profile-avatar">JD</div>
+              <div class="profile-hero-body">
+                <h2 class="profile-name" id="profile-name">-</h2>
+                <span class="profile-role-badge" id="profile-role">-</span>
+                <div class="profile-meta">
+                  <div class="profile-meta-item">
+                    <span class="meta-label">Email</span>
+                    <span class="meta-value" id="profile-email">-</span>
+                  </div>
+                  <div class="profile-meta-item">
+                    <span class="meta-label">Department</span>
+                    <span class="meta-value" id="profile-dept">-</span>
+                  </div>
+                  <div class="profile-meta-item">
+                    <span class="meta-label">Member Since</span>
+                    <span class="meta-value" id="profile-created">-</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="glass-panel profile-security">
-            <div class="panel-header"><h3>Change Password</h3></div>
-            <form id="profile-password-form">
-              <div id="profile-pw-error" class="login-error" style="display:none;"></div>
-              <div id="profile-pw-success" class="profile-success-msg" style="display:none;"></div>
-              <div class="profile-pw-row">
-                <div class="form-group">
-                  <label for="profile-current-pw">Current Password</label>
-                  <input type="password" id="profile-current-pw" required placeholder="Enter current password">
+            <div class="glass-panel profile-security">
+              <div class="panel-header"><h3>Change Password</h3></div>
+              <form id="profile-password-form">
+                <div id="profile-pw-error" class="login-error" style="display:none;"></div>
+                <div id="profile-pw-success" class="profile-success-msg" style="display:none;"></div>
+                <div class="profile-pw-row">
+                  <div class="form-group">
+                    <label for="profile-current-pw">Current Password</label>
+                    <input type="password" id="profile-current-pw" required placeholder="Enter current password">
+                  </div>
                 </div>
-              </div>
-              <div class="profile-pw-row">
-                <div class="form-group">
-                  <label for="profile-new-pw">New Password</label>
-                  <input type="password" id="profile-new-pw" required placeholder="Min. 8 characters" minlength="8">
+                <div class="profile-pw-row">
+                  <div class="form-group">
+                    <label for="profile-new-pw">New Password</label>
+                    <input type="password" id="profile-new-pw" required placeholder="Min. 8 characters" minlength="8">
+                  </div>
+                  <div class="form-group">
+                    <label for="profile-confirm-pw">Confirm New Password</label>
+                    <input type="password" id="profile-confirm-pw" required placeholder="Re-enter new password">
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label for="profile-confirm-pw">Confirm New Password</label>
-                  <input type="password" id="profile-confirm-pw" required placeholder="Re-enter new password">
-                </div>
-              </div>
-              <button type="submit" id="profile-pw-btn" class="btn-primary">Update Password</button>
-            </form>
+                <button type="submit" id="profile-pw-btn" class="btn-primary">Update Password</button>
+              </form>
+            </div>
           </div>
         </div>
 
