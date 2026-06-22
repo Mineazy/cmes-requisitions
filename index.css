@@ -2254,8 +2254,18 @@ main {
   gap: 16px;
 }
 
+.profile-field {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.profile-field:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .profile-field label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -2264,9 +2274,16 @@ main {
 }
 
 .profile-field p {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
+}
+
+#profile-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .profile-success-msg {
