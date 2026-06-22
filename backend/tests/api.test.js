@@ -29,7 +29,7 @@ if (dbAvailable) {
       testUserId = existing.rows[0].id;
     }
 
-    const roles = ['1st Approver', '2nd Approver', '3rd Approver', 'Final Approver', 'Treasurer'];
+    const roles = ['Purchasing HOD', 'Accounts HOD', 'Director', 'Operations HOD', 'Treasurer'];
     for (const role of roles) {
       const h = await bcrypt.hash('testpass123', 12);
       const email = `test.${role.toLowerCase().replace(/\s+/g, '.')}@test.co.zm`;
@@ -137,7 +137,7 @@ conditionalDescribe('Requisitions CRUD', () => {
   test('POST /api/requisitions without Requestor role returns 403', async () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'test.1st.approver@test.co.zm', password: 'testpass123' });
+      .send({ email: 'test.purchasing.hod@test.co.zm', password: 'testpass123' });
     const approverToken = loginRes.body.token;
 
     const res = await request(app)
@@ -169,75 +169,65 @@ conditionalDescribe('Requisitions CRUD', () => {
 });
 
 conditionalDescribe('Full Approval Workflow', () => {
-  let firstApproverToken = '', secondApproverToken = '', thirdApproverToken = '', finalApproverToken = '', treasurerToken = '';
+  let purchasingToken = '', accountsToken = '', directorToken = '', treasurerToken = '';
 
   beforeAll(async () => {
     const users = [
-      { email: 'test.1st.approver@test.co.zm', role: '1st Approver' },
-      { email: 'test.2nd.approver@test.co.zm', role: '2nd Approver' },
-      { email: 'test.3rd.approver@test.co.zm', role: '3rd Approver' },
-      { email: 'test.final.approver@test.co.zm', role: 'Final Approver' },
+      { email: 'test.purchasing.hod@test.co.zm', role: 'Purchasing HOD' },
+      { email: 'test.accounts.hod@test.co.zm', role: 'Accounts HOD' },
+      { email: 'test.director@test.co.zm', role: 'Director' },
       { email: 'test.treasurer@test.co.zm', role: 'Treasurer' }
     ];
     for (const u of users) {
       const res = await request(app).post('/api/auth/login').send({ email: u.email, password: 'testpass123' });
-      if (u.role === '1st Approver') firstApproverToken = res.body.token;
-      if (u.role === '2nd Approver') secondApproverToken = res.body.token;
-      if (u.role === '3rd Approver') thirdApproverToken = res.body.token;
-      if (u.role === 'Final Approver') finalApproverToken = res.body.token;
+      if (u.role === 'Purchasing HOD') purchasingToken = res.body.token;
+      if (u.role === 'Accounts HOD') accountsToken = res.body.token;
+      if (u.role === 'Director') directorToken = res.body.token;
       if (u.role === 'Treasurer') treasurerToken = res.body.token;
     }
   });
 
-  test('Step 1: 1st Approver approves (Pending -> 1st Approver stage)', async () => {
+  test('Step 1: Purchasing HOD approves (Pending -> Purchasing HOD)', async () => {
     const res = await request(app)
-      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${firstApproverToken}`)
+      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${purchasingToken}`)
       .send({ action: 'approve' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('1st Approver stage');
+    expect(res.body.status).toBe('Purchasing HOD');
     expect(res.body.signature).toBeDefined();
   });
 
-  test('Step 2: 2nd Approver approves (1st Approver stage -> 2nd Approver Stage)', async () => {
+  test('Step 2: Accounts HOD approves (Purchasing HOD -> Accounts HOD)', async () => {
     const res = await request(app)
-      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${secondApproverToken}`)
+      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${accountsToken}`)
       .send({ action: 'approve' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('2nd Approver Stage');
+    expect(res.body.status).toBe('Accounts HOD');
     expect(res.body.signature).toBeDefined();
   });
 
-  test('Step 3: 3rd Approver approves (2nd Approver Stage -> 3rd Approver Stage)', async () => {
+  test('Step 3: Director approves (Accounts HOD -> Director)', async () => {
     const res = await request(app)
-      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${thirdApproverToken}`)
+      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${directorToken}`)
       .send({ action: 'approve' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('3rd Approver Stage');
+    expect(res.body.status).toBe('Director');
   });
 
-  test('Step 4: Final Approver approves (3rd Approver Stage -> Final Approver)', async () => {
-    const res = await request(app)
-      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${finalApproverToken}`)
-      .send({ action: 'approve' });
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('Final Approver');
-  });
-
-  test('Step 5: Treasurer queues (Final Approver -> Pending Disbursement)', async () => {
+  test('Step 4: Treasurer queues (Director -> Pending Disbursement)', async () => {
     const res = await request(app)
       .post(`/api/requisitions/${testReqId}/queue-disbursement`).set('Authorization', `Bearer ${treasurerToken}`);
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('Pending Disbursement');
   });
 
-  test('Step 6: Treasurer disburses (Pending Disbursement -> Issued)', async () => {
+  test('Step 5: Treasurer disburses (Pending Disbursement -> Issued)', async () => {
     const res = await request(app)
       .post(`/api/requisitions/${testReqId}/disburse`).set('Authorization', `Bearer ${treasurerToken}`);
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('Issued');
   });
 
-  test('Step 7: Requestor submits receipts (Issued -> Change Returned/Pending)', async () => {
+  test('Step 6: Requestor submits receipts (Issued -> Change Returned/Pending)', async () => {
     const res = await request(app)
       .post(`/api/requisitions/${testReqId}/submit-receipts`).set('Authorization', `Bearer ${testUserToken}`)
       .send({ notes: 'All receipts filed.' });
@@ -245,14 +235,14 @@ conditionalDescribe('Full Approval Workflow', () => {
     expect(res.body.status).toBe('Change Returned/Pending');
   });
 
-  test('Step 8: Treasurer clears (Change Returned/Pending -> Change Cleared)', async () => {
+  test('Step 7: Treasurer clears (Change Returned/Pending -> Change Cleared)', async () => {
     const res = await request(app)
       .post(`/api/requisitions/${testReqId}/clear`).set('Authorization', `Bearer ${treasurerToken}`);
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('Change Cleared');
   });
 
-  test('Step 9: Verify closed requisition', async () => {
+  test('Step 8: Verify closed requisition', async () => {
     const res = await request(app)
       .get(`/api/requisitions/${testReqId}`).set('Authorization', `Bearer ${testUserToken}`);
     expect(res.status).toBe(200);
@@ -272,7 +262,7 @@ conditionalDescribe('Rejection Flow', () => {
     reqId = createRes.body.requisition.req_id;
 
     const loginRes = await request(app).post('/api/auth/login')
-      .send({ email: 'test.1st.approver@test.co.zm', password: 'testpass123' });
+      .send({ email: 'test.operations.hod@test.co.zm', password: 'testpass123' });
 
     const res = await request(app)
       .post(`/api/requisitions/${reqId}/approve`).set('Authorization', `Bearer ${loginRes.body.token}`)
@@ -283,7 +273,7 @@ conditionalDescribe('Rejection Flow', () => {
 
   test('Rejected requisition cannot be approved again', async () => {
     const loginRes = await request(app).post('/api/auth/login')
-      .send({ email: 'test.1st.approver@test.co.zm', password: 'testpass123' });
+      .send({ email: 'test.operations.hod@test.co.zm', password: 'testpass123' });
 
     const res = await request(app)
       .post(`/api/requisitions/${reqId}/approve`).set('Authorization', `Bearer ${loginRes.body.token}`)
@@ -298,7 +288,7 @@ conditionalDescribe('Rejection Flow', () => {
         items: [{ description: 'Item', category: 'Office Admin', quantity: 1, unitPrice: 100 }] });
 
     const loginRes = await request(app).post('/api/auth/login')
-      .send({ email: 'test.1st.approver@test.co.zm', password: 'testpass123' });
+      .send({ email: 'test.purchasing.hod@test.co.zm', password: 'testpass123' });
 
     const res = await request(app)
       .post(`/api/requisitions/${createRes.body.requisition.req_id}/approve`)
@@ -311,7 +301,7 @@ conditionalDescribe('Rejection Flow', () => {
 conditionalDescribe('QR Verification API', () => {
   test('POST /api/requisitions/verify-qr validates a genuine QR', async () => {
     const cryptoService = require('../src/services/cryptoService');
-    const vp = cryptoService.createVerificationPayload('REQ-VALID-001', 'Mutale Chilufya', '1st Approver', 'Pending', '2026-06-09 14:00');
+    const vp = cryptoService.createVerificationPayload('REQ-VALID-001', 'Mutale Chilufya', 'Purchasing HOD', 'Pending', '2026-06-09 14:00');
 
     const res = await request(app)
       .post('/api/requisitions/verify-qr').set('Authorization', `Bearer ${testUserToken}`)
@@ -323,7 +313,7 @@ conditionalDescribe('QR Verification API', () => {
 
   test('POST /api/requisitions/verify-qr rejects tampered QR', async () => {
     const cryptoService = require('../src/services/cryptoService');
-    const vp = cryptoService.createVerificationPayload('REQ-TAMPER-001', 'Bwalya Tembo', 'Treasurer', 'Final Approver', '2026-06-09 15:00');
+    const vp = cryptoService.createVerificationPayload('REQ-TAMPER-001', 'Bwalya Tembo', 'Treasurer', 'Director', '2026-06-09 15:00');
 
     const parsed = JSON.parse(vp.qrData);
     parsed.role = 'Hacker';
@@ -337,19 +327,16 @@ conditionalDescribe('QR Verification API', () => {
   });
 });
 
-conditionalDescribe('Shop Use Workflow (skips 2nd/3rd Approver)', () => {
+conditionalDescribe('Shop Use Workflow (single approver)', () => {
   let shopReqId = '';
-  let firstApproverToken = '';
-  let finalApproverToken = '';
+  let operationsToken = '';
   let treasurerToken = '';
 
   beforeAll(async () => {
-    const r1 = await request(app).post('/api/auth/login').send({ email: 'test.1st.approver@test.co.zm', password: 'testpass123' });
-    firstApproverToken = r1.body.token;
-    const r2 = await request(app).post('/api/auth/login').send({ email: 'test.final.approver@test.co.zm', password: 'testpass123' });
-    finalApproverToken = r2.body.token;
-    const r3 = await request(app).post('/api/auth/login').send({ email: 'test.treasurer@test.co.zm', password: 'testpass123' });
-    treasurerToken = r3.body.token;
+    const r1 = await request(app).post('/api/auth/login').send({ email: 'test.operations.hod@test.co.zm', password: 'testpass123' });
+    operationsToken = r1.body.token;
+    const r2 = await request(app).post('/api/auth/login').send({ email: 'test.treasurer@test.co.zm', password: 'testpass123' });
+    treasurerToken = r2.body.token;
   });
 
   test('Create Shop Use requisition', async () => {
@@ -361,28 +348,20 @@ conditionalDescribe('Shop Use Workflow (skips 2nd/3rd Approver)', () => {
     shopReqId = res.body.requisition.req_id;
   });
 
-  test('1st Approver approves (Pending -> 1st Approver stage)', async () => {
+  test('Operations HOD approves (Pending -> Operations HOD)', async () => {
     const res = await request(app)
-      .post(`/api/requisitions/${shopReqId}/approve`).set('Authorization', `Bearer ${firstApproverToken}`)
+      .post(`/api/requisitions/${shopReqId}/approve`).set('Authorization', `Bearer ${operationsToken}`)
       .send({ action: 'approve' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('1st Approver stage');
+    expect(res.body.status).toBe('Operations HOD');
   });
 
-  test('2nd Approver CANNOT approve Shop Use', async () => {
-    const loginRes = await request(app).post('/api/auth/login').send({ email: 'test.2nd.approver@test.co.zm', password: 'testpass123' });
+  test('Purchasing HOD CANNOT approve Shop Use', async () => {
+    const loginRes = await request(app).post('/api/auth/login').send({ email: 'test.purchasing.hod@test.co.zm', password: 'testpass123' });
     const res = await request(app)
       .post(`/api/requisitions/${shopReqId}/approve`).set('Authorization', `Bearer ${loginRes.body.token}`)
       .send({ action: 'approve' });
     expect(res.status).toBe(403);
-  });
-
-  test('Final Approver directly approves (skips 2nd/3rd)', async () => {
-    const res = await request(app)
-      .post(`/api/requisitions/${shopReqId}/approve`).set('Authorization', `Bearer ${finalApproverToken}`)
-      .send({ action: 'approve' });
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('Final Approver');
   });
 
   test('Complete Shop Use cycle to cleared', async () => {

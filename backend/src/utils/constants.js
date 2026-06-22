@@ -1,10 +1,9 @@
 const STATUS_FLOW = {
   'Admin': [
     'Pending',
-    '1st Approver stage',
-    '2nd Approver Stage',
-    '3rd Approver Stage',
-    'Final Approver',
+    'Purchasing HOD',
+    'Accounts HOD',
+    'Director',
     'Pending Disbursement',
     'Issued',
     'Change Returned/Pending',
@@ -12,8 +11,7 @@ const STATUS_FLOW = {
   ],
   'Shop Use': [
     'Pending',
-    '1st Approver stage',
-    'Final Approver',
+    'Operations HOD',
     'Pending Disbursement',
     'Issued',
     'Change Returned/Pending',
@@ -22,11 +20,11 @@ const STATUS_FLOW = {
 };
 
 const STATUS_ACTOR_MAP = {
-  'Pending': '1st Approver',
-  '1st Approver stage': '2nd Approver',
-  '2nd Approver Stage': '3rd Approver',
-  '3rd Approver Stage': 'Final Approver',
-  'Final Approver': 'Treasurer',
+  'Pending': 'Purchasing HOD',
+  'Purchasing HOD': 'Accounts HOD',
+  'Accounts HOD': 'Director',
+  'Director': 'Treasurer',
+  'Operations HOD': 'Treasurer',
   'Pending Disbursement': 'Treasurer',
   'Issued': 'Requestor',
   'Change Returned/Pending': 'Treasurer',

@@ -933,11 +933,11 @@ main {
   flex-shrink: 0;
   line-height: 1;
 }
-.approval-avatar[data-role="Requestor"]  { background: var(--copper-dark); }
-.approval-avatar[data-role="1st Approver"]  { background: #1a73e8; }
-.approval-avatar[data-role="2nd Approver"]  { background: #7b1fa2; }
-.approval-avatar[data-role="3rd Approver"]  { background: #c62828; }
-.approval-avatar[data-role="Final Approver"] { background: #e65100; }
+.approval-avatar[data-role="Requestor"]    { background: var(--copper-dark); }
+.approval-avatar[data-role="Purchasing HOD"] { background: #1a73e8; }
+.approval-avatar[data-role="Accounts HOD"]   { background: #7b1fa2; }
+.approval-avatar[data-role="Director"]       { background: #e65100; }
+.approval-avatar[data-role="Operations HOD"] { background: #00897b; }
 .approval-avatar[data-role="Treasurer"]      { background: #2e7d32; }
 
 .approval-flow-step .step-dot {

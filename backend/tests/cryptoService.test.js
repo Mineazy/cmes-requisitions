@@ -6,7 +6,7 @@ describe('CryptoService', () => {
   });
 
   test('signApproval generates a valid base64 signature', () => {
-    const data = { id: 'REQ-2026-0001', signer: 'Mutale Chilufya', role: '1st Approver' };
+    const data = { id: 'REQ-2026-0001', signer: 'Mutale Chilufya', role: 'Purchasing HOD' };
     const signature = cryptoService.signApproval(data);
     expect(signature).toBeTruthy();
     expect(typeof signature).toBe('string');
@@ -14,7 +14,7 @@ describe('CryptoService', () => {
   });
 
   test('verifySignature returns true for valid signature', () => {
-    const data = { id: 'REQ-2026-0002', signer: 'Kondwelani Banda', role: '2nd Approver' };
+    const data = { id: 'REQ-2026-0002', signer: 'Kondwelani Banda', role: 'Accounts HOD' };
     const signature = cryptoService.signApproval(data);
     const publicKey = cryptoService.getPublicKey();
     const result = cryptoService.verifySignature(data, signature, publicKey);
@@ -22,7 +22,7 @@ describe('CryptoService', () => {
   });
 
   test('verifySignature returns false for tampered data', () => {
-    const data = { id: 'REQ-2026-0003', signer: 'Sibongile Phiri', role: '3rd Approver' };
+    const data = { id: 'REQ-2026-0003', signer: 'Sibongile Phiri', role: 'Director' };
     const signature = cryptoService.signApproval(data);
 
     const tamperedData = { ...data, role: 'Treasurer' };
@@ -67,8 +67,8 @@ describe('CryptoService', () => {
     const vp = cryptoService.createVerificationPayload(
       'REQ-2026-0006',
       'Mutale Chilufya',
-      '1st Approver',
-      '1st Approver Stage',
+      'Purchasing HOD',
+      'Pending',
       '2026-06-09 11:00'
     );
 

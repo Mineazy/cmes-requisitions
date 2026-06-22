@@ -293,16 +293,16 @@ async function queueDisbursement(req, res) {
 
     const requisition = result.rows[0];
 
-    if (requisition.status !== 'Final Approver') {
-      return res.status(400).json({ error: 'Requisition must be at Final Approver stage' });
+    if (requisition.status !== 'Director' && requisition.status !== 'Operations HOD') {
+      return res.status(400).json({ error: 'Requisition must be at Director or Operations HOD stage' });
     }
 
     await query(`UPDATE requisitions SET status = 'Pending Disbursement', updated_at = NOW() WHERE id = ?`, [requisition.id]);
 
     await query(
       `INSERT INTO approvals (requisition_id, stage, action, user_id, timestamp)
-       VALUES (?, 'Final Approver', 'Queued for Disbursement', ?, NOW())`,
-      [requisition.id, req.user.id]
+       VALUES (?, ?, 'Queued for Disbursement', ?, NOW())`,
+      [requisition.id, requisition.status, req.user.id]
     );
 
     requisition.status = 'Pending Disbursement';
@@ -486,13 +486,7 @@ async function pendingActions(req, res) {
     }
 
     const placeholders = statuses.map(() => '?').join(', ');
-    sql += ` AND (r.status IN (${placeholders})`;
-
-    if (userRole === 'Final Approver') {
-      sql += ` OR (r.status = '1st Approver stage' AND r.type = 'Shop Use')`;
-    }
-
-    sql += `)`;
+    sql += ` AND r.status IN (${placeholders})`;
 
     if (userRole === 'Requestor') {
       sql += ` AND r.requestor_id = ?`;

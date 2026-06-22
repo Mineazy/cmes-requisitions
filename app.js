@@ -3,13 +3,13 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   : '/api';
 
 const STATUS_FLOW = {
-  'Admin': ['Pending','1st Approver stage','2nd Approver Stage','3rd Approver Stage','Final Approver','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Shop Use': ['Pending','1st Approver stage','Final Approver','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
+  'Admin': ['Pending','Purchasing HOD','Accounts HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Shop Use': ['Pending','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
 const STATUS_ACTOR_MAP = {
-  'Pending': '1st Approver','1st Approver stage': '2nd Approver','2nd Approver Stage': '3rd Approver',
-  '3rd Approver Stage': 'Final Approver','Final Approver': 'Treasurer','Pending Disbursement': 'Treasurer',
+  'Pending': 'Purchasing HOD','Purchasing HOD': 'Accounts HOD','Accounts HOD': 'Director',
+  'Director': 'Treasurer','Operations HOD': 'Treasurer','Pending Disbursement': 'Treasurer',
   'Issued': 'Requestor','Change Returned/Pending': 'Treasurer','Change Cleared': 'Treasurer'
 };
 
@@ -286,12 +286,10 @@ function getActionItemsForUser() {
     if (r.status === 'Rejected' || r.status === 'Change Cleared') return false;
     const activeRequiredRole = STATUS_ACTOR_MAP[r.status];
     if (!activeRequiredRole) return false;
-    if (r.status === '1st Approver stage' && r.type === 'Shop Use') return userRole === 'Final Approver';
     if (activeRequiredRole === userRole) {
       if (r.status === 'Issued' && userRole === 'Requestor') return r.requestor_name === state.currentUser.name;
       return true;
     }
-    if (r.status === 'Pending' && userRole === '1st Approver') return true;
     return false;
   });
 }
@@ -300,10 +298,10 @@ function renderRequisitionCardHTML(req) {
   const symbol = req.currency === 'ZMW' ? 'K' : '$';
   const displayAmt = `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   let statusClass = 'status-pending';
-  if (req.status === '1st Approver stage') statusClass = 'status-approver1';
-  else if (req.status === '2nd Approver Stage') statusClass = 'status-approver2';
-  else if (req.status === '3rd Approver Stage') statusClass = 'status-approver3';
-  else if (req.status === 'Final Approver') statusClass = 'status-final';
+  if (req.status === 'Purchasing HOD') statusClass = 'status-approver1';
+  else if (req.status === 'Accounts HOD') statusClass = 'status-approver2';
+  else if (req.status === 'Director') statusClass = 'status-approver3';
+  else if (req.status === 'Operations HOD') statusClass = 'status-approver1';
   else if (req.status === 'Pending Disbursement') statusClass = 'status-disbursement';
   else if (req.status === 'Issued') statusClass = 'status-issued';
   else if (req.status === 'Change Returned/Pending') statusClass = 'status-change-pending';
@@ -388,7 +386,7 @@ function renderQueue() {
     );
   }
 
-  const STATUS_ORDER = ['Pending','1st Approver stage','2nd Approver Stage','3rd Approver Stage','Final Approver','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
+  const STATUS_ORDER = ['Pending','Purchasing HOD','Accounts HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
   filtered.sort((a, b) => {
     const aIdx = STATUS_ORDER.indexOf(a.status);
     const bIdx = STATUS_ORDER.indexOf(b.status);
@@ -698,12 +696,10 @@ function renderModalActionsPanel(req) {
   const activeRequiredRole = STATUS_ACTOR_MAP[req.status];
   let showPanel = false;
 
-  if (req.status === '1st Approver stage' && req.type === 'Shop Use' && userRole === 'Final Approver') {
-    showPanel = true; appBlock.style.display = 'block';
-  } else if (activeRequiredRole && activeRequiredRole === userRole) {
+  if (activeRequiredRole && activeRequiredRole === userRole) {
     showPanel = true;
     if (userRole === 'Treasurer') {
-      if (req.status === 'Final Approver' || req.status === 'Pending Disbursement') tDisburseBlock.style.display = 'block';
+      if (req.status === 'Director' || req.status === 'Operations HOD' || req.status === 'Pending Disbursement') tDisburseBlock.style.display = 'block';
       else if (req.status === 'Change Returned/Pending') tClearBlock.style.display = 'block';
     } else if (userRole === 'Requestor') {
       if (req.status === 'Issued') reqReceiptsBlock.style.display = 'block';
@@ -712,14 +708,11 @@ function renderModalActionsPanel(req) {
       appBlock.style.display = 'block';
     }
   }
-  if (req.status === 'Pending' && userRole === '1st Approver') {
-    showPanel = true; appBlock.style.display = 'block';
-  }
   if (showPanel) actionsPanel.style.display = 'block';
 
   const disburseBtn = tDisburseBlock ? tDisburseBlock.querySelector('.btn-approve') : null;
   if (disburseBtn) {
-    if (req.status === 'Final Approver') {
+    if (req.status === 'Director' || req.status === 'Operations HOD') {
       disburseBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Queue & Process for Disbursement`;
       disburseBtn.onclick = processTreasurerQueue;
     } else if (req.status === 'Pending Disbursement') {
@@ -762,7 +755,6 @@ function renderStepper(req) {
     }
     let label = stage;
     if (stage === 'Pending') label = 'Created (Pending)';
-    else if (stage === 'Final Approver') label = 'Final Approver Clearance';
     else if (stage === 'Pending Disbursement') label = 'Treasurer Disbursement';
     else if (stage === 'Change Returned/Pending') label = 'Receipts & Change Filing';
     else if (stage === 'Change Cleared') label = 'Reconciled & Closed';
@@ -983,18 +975,19 @@ function renderApprovalFlow() {
   if (!flow) { container.innerHTML = ''; return; }
   const labels = {
     'Pending': 'Created',
-    '1st Approver stage': '1st Approval',
-    '2nd Approver Stage': '2nd Approval',
-    '3rd Approver Stage': '3rd Approval',
-    'Final Approver': 'Final Approval',
+    'Purchasing HOD': 'Purchasing',
+    'Accounts HOD': 'Accounts',
+    'Director': 'Director',
+    'Operations HOD': 'Operations',
     'Pending Disbursement': 'Disburse',
     'Issued': 'Issued',
     'Change Returned/Pending': 'Receipts',
     'Change Cleared': 'Cleared'
   };
   const ROLE_INITIALS = {
-    '1st Approver': '1A','2nd Approver': '2A','3rd Approver': '3A',
-    'Final Approver': 'FA','Treasurer': 'T','Requestor': 'CR'
+    'Purchasing HOD': 'PH','Accounts HOD': 'AH',
+    'Director': 'DR','Operations HOD': 'OH',
+    'Treasurer': 'T','Requestor': 'CR'
   };
   container.innerHTML = flow.map((stage, i) => {
     const actor = STATUS_ACTOR_MAP[stage];

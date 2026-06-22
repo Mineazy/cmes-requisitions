@@ -49,12 +49,7 @@ async function notifyNextApprover(req) {
   const nextActorRole = STATUS_ACTOR_MAP[req.status];
   if (!nextActorRole) return null;
 
-  let targetRole = nextActorRole;
-  if (req.status === '1st Approver stage' && req.type === 'Shop Use') {
-    targetRole = 'Final Approver';
-  }
-
-  const userResult = await query('SELECT * FROM users WHERE role = ? LIMIT 1', [targetRole]);
+  const userResult = await query('SELECT * FROM users WHERE role = ? LIMIT 1', [nextActorRole]);
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];

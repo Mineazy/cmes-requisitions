@@ -215,7 +215,7 @@
           <form id="new-req-form" onsubmit="window.handleFormSubmit(event)" class="create-req-form">
             <div class="form-grid-2">
               <div class="form-group"><label for="req-title">Requisition Subject / Title</label><input type="text" id="req-title" required placeholder="e.g. Spare Diamond bits for Sandvik drills"></div>
-              <div class="form-group"><label for="req-type">Requisition Type</label><select id="req-type" required onchange="window.renderApprovalFlow && window.renderApprovalFlow()"><option value="Admin">Admin Requisition (4 Approvers)</option><option value="Shop Use">Shop Use Requisition (2 Approvers)</option></select></div>
+              <div class="form-group"><label for="req-type">Requisition Type</label><select id="req-type" required onchange="window.renderApprovalFlow && window.renderApprovalFlow()"><option value="Admin">Admin Requisition (3 Approvers)</option><option value="Shop Use">Shop Use Requisition (1 Approver)</option></select></div>
             </div>
             <div class="form-grid-2">
               <div class="form-group"><label for="req-department">Department / Branch</label><select id="req-department" required><option value="Mumba">Mumba</option><option value="Mpika">Mpika</option><option value="Chaisa">Chaisa</option></select></div>
@@ -309,10 +309,10 @@
                   <select id="admin-req-status-filter" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.8rem;">
                     <option value="">All Statuses</option>
                     <option value="Pending">Pending</option>
-                    <option value="1st Approver stage">1st Approver</option>
-                    <option value="2nd Approver Stage">2nd Approver</option>
-                    <option value="3rd Approver Stage">3rd Approver</option>
-                    <option value="Final Approver">Final Approver</option>
+                    <option value="Purchasing HOD">Purchasing HOD</option>
+                    <option value="Accounts HOD">Accounts HOD</option>
+                    <option value="Director">Director</option>
+                    <option value="Operations HOD">Operations HOD</option>
                     <option value="Pending Disbursement">Pending Disbursement</option>
                     <option value="Issued">Issued</option>
                     <option value="Change Returned/Pending">Change Returned</option>
@@ -473,10 +473,10 @@
             <div class="form-group"><label for="admin-user-role">Role</label>
               <select id="admin-user-role" required>
                 <option value="Requestor">Requestor</option>
-                <option value="1st Approver">1st Approver</option>
-                <option value="2nd Approver">2nd Approver</option>
-                <option value="3rd Approver">3rd Approver</option>
-                <option value="Final Approver">Final Approver</option>
+                <option value="Purchasing HOD">Purchasing HOD</option>
+                <option value="Accounts HOD">Accounts HOD</option>
+                <option value="Director">Director</option>
+                <option value="Operations HOD">Operations HOD</option>
                 <option value="Treasurer">Treasurer</option>
                 <option value="Admin">Admin</option>
               </select>
