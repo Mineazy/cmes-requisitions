@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 
 let pool = null;
+let overrideDb = null;
 
 function getPoolConfig() {
   const url = process.env.DATABASE_URL || '';
@@ -9,6 +10,8 @@ function getPoolConfig() {
   const dbHost = process.env.DB_HOST;
   const dbPort = process.env.DB_PORT || '4000';
   const dbName = process.env.DB_NAME || 'cmes_requisitions';
+
+  const resolvedDb = overrideDb || dbName;
 
   const base = {
     waitForConnections: true,
@@ -22,19 +25,19 @@ function getPoolConfig() {
   let sslEnabled = false;
 
   if (dbUser && dbPass && dbHost) {
-    config = { ...base, host: dbHost, port: parseInt(dbPort), user: dbUser, password: dbPass, database: dbName };
+    config = { ...base, host: dbHost, port: parseInt(dbPort), user: dbUser, password: dbPass, database: resolvedDb };
     sslEnabled = process.env.DB_SSL === 'true';
   } else if (url) {
-    config = { ...base, uri: url };
+    config = { ...base, uri: url.replace(/\/[^/?#]+(?=\?|#|$)/, `/${resolvedDb}`) };
     sslEnabled = url.includes('tidbcloud.com') || url.includes('ssl=') || process.env.DB_SSL === 'true';
   } else {
-    config = { ...base, host: 'localhost', port: 3306, user: 'root', password: '', database: 'cmes_requisitions' };
+    config = { ...base, host: 'localhost', port: 3306, user: 'root', password: '', database: resolvedDb };
   }
 
   if (sslEnabled) {
     config.ssl = { rejectUnauthorized: true };
   }
-  return { config, dbName };
+  return { config, dbName: resolvedDb };
 }
 
 function getPool() {
@@ -79,17 +82,44 @@ async function transaction(callback) {
 }
 
 async function initializeDatabase() {
-  // Bootstrap: ensure database exists (connect without a specific database)
-  const { config, dbName } = getPoolConfig();
-  const { database: _, ...bootstrapConfig } = config;
-  const bootstrapConn = await mysql.createConnection(bootstrapConfig);
+  const url = process.env.DATABASE_URL || '';
+
+  // Build bootstrap config (always connect to 'test' which exists in TiDB Serverless)
+  let bootstrapConfig = {
+    host: 'localhost', port: 3306, user: 'root', password: '',
+    database: 'test', waitForConnections: true, connectionLimit: 1, queueLimit: 0
+  };
+  if (process.env.DB_HOST) {
+    bootstrapConfig.host = process.env.DB_HOST;
+    bootstrapConfig.port = parseInt(process.env.DB_PORT || '4000');
+    bootstrapConfig.user = process.env.DB_USER;
+    bootstrapConfig.password = process.env.DB_PASSWORD;
+  } else if (url) {
+    const parsed = new URL(url);
+    bootstrapConfig.host = parsed.hostname;
+    bootstrapConfig.port = parseInt(parsed.port) || 4000;
+    bootstrapConfig.user = decodeURIComponent(parsed.username);
+    bootstrapConfig.password = decodeURIComponent(parsed.password);
+  }
+  const sslEnabled = process.env.DB_SSL === 'true' || url.includes('tidbcloud.com') || url.includes('ssl=');
+  if (sslEnabled) {
+    bootstrapConfig.ssl = { rejectUnauthorized: true };
+  }
+
+  // Determine the target database, with fallback to 'test'
+  const dbName = process.env.DB_NAME || 'cmes_requisitions';
+
+  let bootstrapConn;
   try {
+    bootstrapConn = await mysql.createConnection(bootstrapConfig);
     await bootstrapConn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
     console.log(`Database "${dbName}" ensured`);
   } catch (err) {
-    console.warn('Could not auto-create database:', err.message);
+    console.warn(`Cannot create database "${dbName}", falling back to "test": ${err.message}`);
+    overrideDb = 'test';
+  } finally {
+    if (bootstrapConn) await bootstrapConn.end();
   }
-  await bootstrapConn.end();
 
   const schema = `
     CREATE TABLE IF NOT EXISTS users (
