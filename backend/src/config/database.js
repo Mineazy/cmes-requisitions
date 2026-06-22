@@ -84,7 +84,7 @@ async function transaction(callback) {
 async function initializeDatabase() {
   const url = process.env.DATABASE_URL || '';
 
-  // Build bootstrap config (always connect to 'test' which exists in TiDB Serverless)
+  // Build bootstrap config — use URI directly (same as pool) but pointing to 'test'
   let bootstrapConfig = {
     host: 'localhost', port: 3306, user: 'root', password: '',
     database: 'test', waitForConnections: true, connectionLimit: 1, queueLimit: 0
@@ -95,14 +95,10 @@ async function initializeDatabase() {
     bootstrapConfig.user = process.env.DB_USER;
     bootstrapConfig.password = process.env.DB_PASSWORD;
   } else if (url) {
-    const parsed = new URL(url);
-    bootstrapConfig.host = parsed.hostname;
-    bootstrapConfig.port = parseInt(parsed.port) || 4000;
-    bootstrapConfig.user = decodeURIComponent(parsed.username);
-    bootstrapConfig.password = decodeURIComponent(parsed.password);
+    bootstrapConfig = { uri: url.replace(/\/[^/?#]+(?=\?|#|$)/, '/test'), connectionLimit: 1, queueLimit: 0 };
   }
   const sslEnabled = process.env.DB_SSL === 'true' || url.includes('tidbcloud.com') || url.includes('ssl=');
-  if (sslEnabled) {
+  if (sslEnabled && !bootstrapConfig.uri) {
     bootstrapConfig.ssl = { rejectUnauthorized: true };
   }
 
@@ -179,7 +175,7 @@ async function initializeDatabase() {
       body TEXT,
       req_id VARCHAR(50),
       target_role VARCHAR(50),
-      read TINYINT(1) DEFAULT 0,
+      `read` TINYINT(1) DEFAULT 0,
       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
