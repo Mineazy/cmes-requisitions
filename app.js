@@ -1384,11 +1384,18 @@ async function adminDeleteUser(userId, userName) {
 }
 
 // --- Profile ---
+function getInitials(name) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 async function renderProfile() {
   try {
     const data = await apiFetch('GET', '/auth/profile');
     const u = data.user;
     document.getElementById('profile-name').textContent = u.name;
+    document.getElementById('profile-avatar').textContent = getInitials(u.name);
     document.getElementById('profile-email').textContent = u.email;
     document.getElementById('profile-role').textContent = u.role;
     document.getElementById('profile-dept').textContent = u.department || '-';
