@@ -4,7 +4,8 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
 
 const STATUS_FLOW = {
   'Admin': ['Pending','Purchasing HOD','Accounts HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Shop Use': ['Pending','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
+  'Shop Use': ['Pending','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Returns Requisition': ['Pending','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
 const STATUS_ACTOR_MAP = {

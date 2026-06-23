@@ -16,6 +16,14 @@ const STATUS_FLOW = {
     'Issued',
     'Change Returned/Pending',
     'Change Cleared'
+  ],
+  'Returns Requisition': [
+    'Pending',
+    'Operations HOD',
+    'Pending Disbursement',
+    'Issued',
+    'Change Returned/Pending',
+    'Change Cleared'
   ]
 };
 
