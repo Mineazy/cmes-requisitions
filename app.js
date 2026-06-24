@@ -5,14 +5,44 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
 const STATUS_FLOW = {
   'Admin': ['Pending','Purchasing HOD','Accounts HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Shop Use': ['Pending','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Returns Requisition': ['Pending','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
+  'Returns Requisition': ['Pending','Operations HOD','Accounts HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
 const STATUS_ACTOR_MAP = {
-  'Pending': 'Purchasing HOD','Purchasing HOD': 'Accounts HOD','Accounts HOD': 'Director',
-  'Director': 'Treasurer','Operations HOD': 'Treasurer','Pending Disbursement': 'Treasurer',
-  'Issued': 'Requestor','Change Returned/Pending': 'Treasurer','Change Cleared': 'Treasurer'
+  'Admin': {
+    'Pending': 'Purchasing HOD',
+    'Purchasing HOD': 'Accounts HOD',
+    'Accounts HOD': 'Director',
+    'Director': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  },
+  'Shop Use': {
+    'Pending': 'Operations HOD',
+    'Operations HOD': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  },
+  'Returns Requisition': {
+    'Pending': 'Operations HOD',
+    'Operations HOD': 'Accounts HOD',
+    'Accounts HOD': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  }
 };
+
+function getNextActorRole(status, type) {
+  const typeMap = STATUS_ACTOR_MAP[type];
+  if (!typeMap) return null;
+  return typeMap[status] || null;
+}
 
 let state = {
   token: localStorage.getItem('cmes_token') || null,
@@ -297,7 +327,7 @@ function getActionItemsForUser() {
   const userRole = state.currentUser ? state.currentUser.role : '';
   return state.requisitions.filter(r => {
     if (r.status === 'Rejected' || r.status === 'Change Cleared') return false;
-    const activeRequiredRole = STATUS_ACTOR_MAP[r.status];
+    const activeRequiredRole = getNextActorRole(r.status, r.type);
     if (!activeRequiredRole) return false;
     if (activeRequiredRole === userRole) {
       if (r.status === 'Issued' && userRole === 'Requestor') return r.requestor_name === state.currentUser.name;
@@ -706,7 +736,7 @@ function renderModalActionsPanel(req) {
   if (req.status === 'Change Cleared') return;
 
   const userRole = state.currentUser ? state.currentUser.role : '';
-  const activeRequiredRole = STATUS_ACTOR_MAP[req.status];
+  const activeRequiredRole = getNextActorRole(req.status, req.type);
   let showPanel = false;
 
   if (activeRequiredRole && activeRequiredRole === userRole) {
@@ -1003,7 +1033,7 @@ function renderApprovalFlow() {
     'Treasurer': 'T','Requestor': 'CR'
   };
   container.innerHTML = flow.map((stage, i) => {
-    const actor = STATUS_ACTOR_MAP[stage];
+    const actor = getNextActorRole(stage, typeEl.value);
     const initials = ROLE_INITIALS[actor] || (actor ? actor.charAt(0) : '?');
     const step = `<span class="approval-flow-step"><span class="approval-avatar" data-role="${actor || ''}">${initials}</span><span>${labels[stage] || stage}</span></span>`;
     const arrow = i < flow.length - 1 ? `<span class="approval-flow-arrow">\u25B6</span>` : '';

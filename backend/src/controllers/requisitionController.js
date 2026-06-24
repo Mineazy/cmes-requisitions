@@ -1,5 +1,5 @@
 const { query, transaction } = require('../config/database');
-const { STATUS_FLOW, STATUS_ACTOR_MAP } = require('../utils/constants');
+const { STATUS_FLOW, STATUS_ACTOR_MAP, getNextActorRole } = require('../utils/constants');
 const { generateReqId, formatTimestamp, currencySymbol } = require('../utils/helpers');
 const cryptoService = require('../services/cryptoService');
 const emailService = require('../services/emailService');
@@ -472,7 +472,8 @@ async function pendingActions(req, res) {
       AND r.status != 'Change Cleared'
     `;
 
-    const statuses = Object.entries(STATUS_ACTOR_MAP)
+    const statuses = Object.values(STATUS_ACTOR_MAP)
+      .flatMap(typeMap => Object.entries(typeMap))
       .filter(([_, role]) => role === userRole)
       .map(([status]) => status);
 

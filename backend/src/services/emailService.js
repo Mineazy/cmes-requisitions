@@ -44,9 +44,9 @@ async function createEmail({ from, to, recipientName, subject, body, reqId, targ
 }
 
 async function notifyNextApprover(req) {
-  const { STATUS_ACTOR_MAP } = require('../utils/constants');
+  const { getNextActorRole } = require('../utils/constants');
 
-  const nextActorRole = STATUS_ACTOR_MAP[req.status];
+  const nextActorRole = getNextActorRole(req.status, req.type);
   if (!nextActorRole) return null;
 
   const userResult = await query('SELECT * FROM users WHERE role = ? LIMIT 1', [nextActorRole]);

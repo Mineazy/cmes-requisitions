@@ -20,6 +20,7 @@ const STATUS_FLOW = {
   'Returns Requisition': [
     'Pending',
     'Operations HOD',
+    'Accounts HOD',
     'Pending Disbursement',
     'Issued',
     'Change Returned/Pending',
@@ -28,15 +29,39 @@ const STATUS_FLOW = {
 };
 
 const STATUS_ACTOR_MAP = {
-  'Pending': 'Purchasing HOD',
-  'Purchasing HOD': 'Accounts HOD',
-  'Accounts HOD': 'Director',
-  'Director': 'Treasurer',
-  'Operations HOD': 'Treasurer',
-  'Pending Disbursement': 'Treasurer',
-  'Issued': 'Requestor',
-  'Change Returned/Pending': 'Treasurer',
-  'Change Cleared': 'Treasurer'
+  'Admin': {
+    'Pending': 'Purchasing HOD',
+    'Purchasing HOD': 'Accounts HOD',
+    'Accounts HOD': 'Director',
+    'Director': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  },
+  'Shop Use': {
+    'Pending': 'Operations HOD',
+    'Operations HOD': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  },
+  'Returns Requisition': {
+    'Pending': 'Operations HOD',
+    'Operations HOD': 'Accounts HOD',
+    'Accounts HOD': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  }
 };
 
-module.exports = { STATUS_FLOW, STATUS_ACTOR_MAP };
+function getNextActorRole(status, type) {
+  const typeMap = STATUS_ACTOR_MAP[type];
+  if (!typeMap) return null;
+  return typeMap[status] || null;
+}
+
+module.exports = { STATUS_FLOW, STATUS_ACTOR_MAP, getNextActorRole };
