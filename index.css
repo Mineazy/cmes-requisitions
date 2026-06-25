@@ -1,29 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg-primary: #172121;
-  --bg-secondary: #1A2526;
-  --bg-card: #EAF2EF;
-  --bg-card-hover: #DCE8E7;
-  --border-color: rgba(0, 0, 254, 0.2);
-  --border-color-hover: rgba(0, 0, 254, 0.4);
+  --bg-primary: #060D1A;
+  --bg-secondary: #0A1628;
+  --bg-card: #0F1E38;
+  --bg-card-hover: #162948;
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-color-hover: rgba(255, 255, 255, 0.12);
   
   /* Brand Tones */
-  --copper: #0000FE;
-  --copper-light: #3333FF;
-  --copper-dark: #0000CC;
-  --copper-glow: rgba(0, 0, 254, 0.15);
+  --copper: #E37622;
+  --copper-light: #F59E0B;
+  --copper-dark: #C25E1A;
+  --copper-glow: rgba(227, 118, 34, 0.15);
   
-  --emerald: #FFFF00;
-  --emerald-dark: #E6E600;
-  --emerald-glow: rgba(255, 255, 0, 0.15);
+  --emerald: #10B981;
+  --emerald-dark: #047857;
+  --emerald-glow: rgba(16, 185, 129, 0.15);
   
-  --ruby: #FF3333;
-  --ruby-dark: #CC0000;
-  --ruby-glow: rgba(255, 51, 51, 0.15);
+  --ruby: #EF4444;
+  --ruby-dark: #B91C1C;
+  --ruby-glow: rgba(239, 68, 68, 0.15);
   
-  --text-primary: #172121;
-  --text-secondary: #0000FE;
+  --text-primary: #F8FAFC;
+  --text-secondary: #8BB8E0;
   --text-muted: #5A7FA8;
   
   /* Sidebar Width */
@@ -353,9 +353,9 @@ main {
 .metric-card.copper-accent::after { background: var(--copper); }
 .metric-card.emerald-accent::after { background: var(--emerald); }
 .metric-card.ruby-accent::after { background: var(--ruby); }
-.metric-card.blue-accent::after { background: var(--copper); }
-.metric-card.gold-accent::after { background: var(--emerald); }
-.metric-card.silver-accent::after { background: var(--copper-dark); }
+.metric-card.blue-accent::after { background: #3b82f6; }
+.metric-card.gold-accent::after { background: #f59e0b; }
+.metric-card.silver-accent::after { background: #94a3b8; }
 
 .metric-card:hover {
   transform: translateY(-4px);
@@ -383,10 +383,10 @@ main {
   justify-content: center;
 }
 
-.copper-accent .metric-icon-box { background-color: var(--copper-glow); color: var(--copper); }
-.emerald-accent .metric-icon-box { background-color: var(--emerald-glow); color: var(--emerald); }
-.ruby-accent .metric-icon-box { background-color: var(--ruby-glow); color: var(--ruby); }
-.blue-accent .metric-icon-box { background-color: var(--copper-glow); color: var(--copper); }
+.copper-accent .metric-icon-box { background-color: rgba(227, 118, 34, 0.1); color: var(--copper); }
+.emerald-accent .metric-icon-box { background-color: rgba(16, 185, 129, 0.1); color: var(--emerald); }
+.ruby-accent .metric-icon-box { background-color: rgba(239, 68, 68, 0.1); color: var(--ruby); }
+.blue-accent .metric-icon-box { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 
 .metric-icon-box svg {
   width: 20px;
@@ -647,15 +647,15 @@ main {
 }
 
 .req-type-badge.admin {
-  background-color: var(--copper-glow);
+  background-color: rgba(227, 118, 34, 0.15);
   color: var(--copper-light);
-  border: 1px solid rgba(0, 0, 254, 0.3);
+  border: 1px solid rgba(227, 118, 34, 0.3);
 }
 
 .req-type-badge.shop {
-  background-color: var(--copper-glow);
-  color: var(--copper);
-  border: 1px solid rgba(0, 0, 254, 0.3);
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .card-title {
@@ -708,16 +708,16 @@ main {
   background-color: currentColor;
 }
 
-.status-pending { background-color: var(--copper-glow); color: var(--copper); }
-.status-approver1 { background-color: var(--copper-glow); color: var(--copper); }
-.status-approver2 { background-color: var(--copper-glow); color: var(--copper-dark); }
-.status-approver3 { background-color: var(--copper-glow); color: var(--copper-dark); }
-.status-final { background-color: var(--emerald-glow); color: var(--emerald-dark); }
-.status-disbursement { background-color: var(--copper-glow); color: var(--copper); }
-.status-issued { background-color: var(--emerald-glow); color: var(--emerald-dark); }
-.status-change-pending { background-color: var(--copper-glow); color: var(--copper); }
-.status-change-cleared { background-color: var(--emerald-glow); color: var(--emerald-dark); }
-.status-rejected { background-color: var(--ruby-glow); color: var(--ruby); }
+.status-pending { background-color: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+.status-approver1 { background-color: rgba(16, 185, 129, 0.15); color: #10B981; }
+.status-approver2 { background-color: rgba(16, 185, 129, 0.15); color: #10B981; }
+.status-approver3 { background-color: rgba(16, 185, 129, 0.15); color: #10B981; }
+.status-final { background-color: rgba(16, 185, 129, 0.15); color: #10B981; }
+.status-disbursement { background-color: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.status-issued { background-color: rgba(16, 185, 129, 0.25); color: #34D399; }
+.status-change-pending { background-color: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+.status-change-cleared { background-color: rgba(16, 185, 129, 0.3); color: #059669; }
+.status-rejected { background-color: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
 /* Requisition Creation Form */
 .form-card {
@@ -934,11 +934,11 @@ main {
   line-height: 1;
 }
 .approval-avatar[data-role="Requestor"]    { background: var(--copper-dark); }
-.approval-avatar[data-role="Purchasing HOD"] { background: var(--copper); }
-.approval-avatar[data-role="Accounts HOD"]   { background: var(--copper-light); }
-.approval-avatar[data-role="Director"]       { background: var(--copper-dark); }
-.approval-avatar[data-role="Operations HOD"] { background: var(--emerald); }
-.approval-avatar[data-role="Treasurer"]      { background: var(--emerald-dark); }
+.approval-avatar[data-role="Purchasing HOD"] { background: #1a73e8; }
+.approval-avatar[data-role="Accounts HOD"]   { background: #7b1fa2; }
+.approval-avatar[data-role="Director"]       { background: #e65100; }
+.approval-avatar[data-role="Operations HOD"] { background: #00897b; }
+.approval-avatar[data-role="Treasurer"]      { background: #2e7d32; }
 
 .approval-flow-step .step-dot {
   width: 8px;
@@ -2230,8 +2230,8 @@ main {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--copper-glow);
-  color: var(--copper);
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
   white-space: nowrap;
   font-family: monospace;
 }

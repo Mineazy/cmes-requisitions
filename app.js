@@ -378,7 +378,7 @@ function renderCategoryChart() {
   });
 
   const categories = ['Heavy Equipment', 'Drills & Tools', 'Safety Wear (PPE)', 'Consumables', 'Office Admin'];
-  const colors = { 'Heavy Equipment': '#0000FE','Drills & Tools': '#3333FF','Safety Wear (PPE)': '#FFFF00','Consumables': '#6666FF','Office Admin': '#0000CC' };
+  const colors = { 'Heavy Equipment': '#E37622','Drills & Tools': '#3B82F6','Safety Wear (PPE)': '#10B981','Consumables': '#A78BFA','Office Admin': '#5A7FA8' };
   const svg = document.getElementById('pie-chart-svg');
   const legend = document.getElementById('pie-chart-legend');
 
@@ -841,14 +841,14 @@ function drawQRCode(elementId, text) {
   if (!container) return;
   container.innerHTML = '';
   if (window.QRCode) {
-    try { new QRCode(container, { text, width: 50, height: 50, colorDark: '#172121', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H }); return; }
+    try { new QRCode(container, { text, width: 50, height: 50, colorDark: '#0F172A', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H }); return; }
     catch (e) { console.warn('QRCode JS error, falling back', e); }
   }
   const canvas = document.createElement('canvas');
   canvas.width = 50; canvas.height = 50;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, 50, 50);
-  ctx.fillStyle = '#172121';
+  ctx.fillStyle = '#060D1A';
   let hash = 0;
   for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
   drawQRAnchor(ctx, 2, 2); drawQRAnchor(ctx, 38, 2); drawQRAnchor(ctx, 2, 38);
@@ -865,7 +865,7 @@ function drawQRCode(elementId, text) {
 function drawQRAnchor(ctx, x, y) {
   ctx.fillRect(x, y, 10, 10);
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + 2, y + 2, 6, 6);
-  ctx.fillStyle = '#172121'; ctx.fillRect(x + 3, y + 3, 4, 4);
+  ctx.fillStyle = '#060D1A'; ctx.fillRect(x + 3, y + 3, 4, 4);
 }
 
 // --- Action Processors ---
