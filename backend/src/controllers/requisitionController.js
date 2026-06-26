@@ -209,6 +209,11 @@ async function processApproval(req, res) {
       return res.status(400).json({ error: 'Invalid current status' });
     }
 
+    const expectedRole = getNextActorRole(requisition.status, requisition.type);
+    if (req.user.role !== expectedRole) {
+      return res.status(403).json({ error: `Only ${expectedRole} can act on this requisition at the current stage` });
+    }
+
     if (action === 'reject') {
       if (!reason || !reason.trim()) {
         return res.status(400).json({ error: 'A reason is required for rejection' });

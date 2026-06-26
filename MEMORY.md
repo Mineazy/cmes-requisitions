@@ -147,7 +147,12 @@
 - Updated frontend `STATUS_FLOW`, `STATUS_ACTOR_MAP`, labels, `ROLE_INITIALS` (`RV`), and `STATUS_ORDER`.
 - **Files:** `backend/src/utils/constants.js`, `backend/src/controllers/adminController.js`, `backend/tests/api.test.js`, `app.js`, `index.html`, `index.css`
 
-## 15. Download Approved Requisition PDF
+## 15. Fix 500 Error on Reviewer Approval
+- **Root cause:** `notifyNextApprover` in `emailService.js:66` used `targetRole` (undefined variable) as property value shorthand — threw `ReferenceError: targetRole is not defined` when called after an approval.
+- This bug existed since the approver restructuring (section 9) but was latent because email notification is fire-and-forget after the DB transaction succeeds; however the error was caught by `processApproval`'s catch block which returned a 500 response, causing the frontend to show "Approval failed: Internal Server Error".
+- **Fix:** Changed `targetRole` → `targetRole: nextActorRole`.
+- Also added role validation to `processApproval`: checks `getNextActorRole(status, type) === req.user.role` before allowing approval/rejection (returns 403 if mismatch).
+- **Files:** `backend/src/services/emailService.js`, `backend/src/controllers/requisitionController.js`
 - Added "Download PDF" button in the requisition details modal header, visible once the requisition has passed all approval stages (status index >= "Pending Disbursement" in `STATUS_FLOW`).
 - Frontend-only PDF generation using jsPDF + jspdf-autotable (already loaded via CDN).
 - PDF layout:
