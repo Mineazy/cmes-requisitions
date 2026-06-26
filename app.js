@@ -772,6 +772,13 @@ async function openDetails(reqId) {
     document.getElementById('detail-date').textContent = req.created_at ? req.created_at.split('T')[0] : '';
     document.getElementById('detail-currency').textContent = req.currency;
 
+    const flow = STATUS_FLOW[req.type];
+    const disburseIdx = flow.indexOf('Pending Disbursement');
+    const currentIdx = flow.indexOf(req.status);
+    const isApproved = currentIdx >= disburseIdx;
+    const downloadBtn = document.getElementById('detail-download-pdf-btn');
+    downloadBtn.style.display = isApproved ? 'flex' : 'none';
+
     const tbody = document.getElementById('detail-items-tbody');
     const symbol = req.currency === 'ZMW' ? 'K' : '$';
     tbody.innerHTML = (req.items || []).map(it => `<tr>
@@ -1468,6 +1475,160 @@ async function downloadPdfReport() {
     btn.innerHTML = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;fill:none;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> PDF Report';
   }
 }
+
+// --- Download Approved Requisition PDF ---
+window.downloadApprovedPdf = function() {
+  const req = state.selectedRequisition;
+  if (!req) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const maxWidth = pageWidth - margin * 2;
+
+  let y = margin;
+
+  // --- Header ---
+  doc.setFontSize(18);
+  doc.setTextColor(227, 118, 34);
+  doc.text('EazyTools Zambia', margin, y);
+  y += 7;
+  doc.setFontSize(13);
+  doc.setTextColor(248, 250, 252);
+  doc.text('Approved Requisition', margin, y);
+  y += 12;
+
+  // --- Info box ---
+  const infoX = margin;
+  const infoW = maxWidth;
+  doc.setDrawColor(227, 118, 34);
+  doc.setFillColor(10, 22, 40);
+  doc.roundedRect(infoX, y, infoW, 38, 3, 3, 'FD');
+  doc.setTextColor(248, 250, 252);
+  doc.setFontSize(11);
+  doc.text(`Req ID: ${req.req_id}`, infoX + 4, y + 7);
+  doc.text(`Type: ${req.type}`, infoX + 4, y + 14);
+  doc.text(`Status: ${req.status}`, infoX + 4, y + 21);
+  doc.text(`Date Filed: ${req.created_at ? req.created_at.split('T')[0] : ''}`, infoX + 4, y + 28);
+  doc.text(`Title: ${req.title}`, infoX + infoW / 2, y + 7);
+  doc.text(`Submitted By: ${req.requestor_name}`, infoX + infoW / 2, y + 14);
+  doc.text(`Department: ${req.department}`, infoX + infoW / 2, y + 21);
+  doc.text(`Currency: ${req.currency}`, infoX + infoW / 2, y + 28);
+  y += 48;
+
+  // --- Items Table ---
+  doc.setFontSize(12);
+  doc.setTextColor(227, 118, 34);
+  doc.text('Requisition Items', margin, y);
+  y += 5;
+
+  const tableHead = [['#', 'Description', 'Category', 'Qty', 'Unit Price', 'Total']];
+  const tableBody = (req.items || []).map((it, i) => [
+    String(i + 1),
+    it.description || '',
+    it.category || '',
+    String(it.quantity || 0),
+    `${symbol}${parseFloat(it.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+    `${symbol}${parseFloat(it.total_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+  ]);
+
+  doc.autoTable({
+    head: tableHead,
+    body: tableBody,
+    startY: y,
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8.5, cellPadding: 3, textColor: [248, 250, 252] },
+    headStyles: { fillColor: [227, 118, 34], fontSize: 8.5, halign: 'center', textColor: [255, 255, 255] },
+    bodyStyles: { fillColor: [15, 30, 56] },
+    alternateRowStyles: { fillColor: [10, 22, 40] },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      3: { halign: 'center' },
+      4: { halign: 'right' },
+      5: { halign: 'right' }
+    },
+    foot: [[{ content: 'Grand Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', textColor: [227, 118, 34], fillColor: [10, 22, 40] } },
+            { content: `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [227, 118, 34], fillColor: [10, 22, 40] } }]],
+    footStyles: { fillColor: [10, 22, 40] }
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+  if (y > 270) { doc.addPage(); y = margin; }
+
+  // --- Approval History ---
+  doc.setFontSize(12);
+  doc.setTextColor(227, 118, 34);
+  doc.text('Approval Trail', margin, y);
+  y += 5;
+
+  const history = req.history || [];
+  doc.autoTable({
+    body: history.map(h => {
+      const ts = h.timestamp ? h.timestamp.split('T')[0] + ' ' + (h.timestamp.split('T')[1] ? h.timestamp.split('T')[1].substring(0, 5) : '') : '';
+      const actionLabel = h.action === 'Approved' ? 'Approved' : h.action === 'Rejected' ? 'Rejected' : h.action;
+      return [actionLabel, h.stage || '', h.user_name || '', h.user_role || '', ts];
+    }),
+    columns: [
+      { header: 'Action', dataKey: 0 },
+      { header: 'Stage', dataKey: 1 },
+      { header: 'User', dataKey: 2 },
+      { header: 'Role', dataKey: 3 },
+      { header: 'Date/Time', dataKey: 4 }
+    ],
+    startY: y,
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8, cellPadding: 3, textColor: [248, 250, 252] },
+    headStyles: { fillColor: [227, 118, 34], fontSize: 8, textColor: [255, 255, 255] },
+    bodyStyles: { fillColor: [15, 30, 56] },
+    alternateRowStyles: { fillColor: [10, 22, 40] },
+    columnStyles: {
+      0: { cellWidth: 28 },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 30 }
+    }
+  });
+
+  // --- Signatures Section ---
+  const signedApprovals = history.filter(h => h.signature && h.action === 'Approved');
+  if (signedApprovals.length > 0) {
+    y = doc.lastAutoTable.finalY + 10;
+    if (y > 255) { doc.addPage(); y = margin; }
+    doc.setFontSize(12);
+    doc.setTextColor(227, 118, 34);
+    doc.text('Digital Signatures', margin, y);
+    y += 5;
+
+    signedApprovals.forEach((h, idx) => {
+      if (y > 275) { doc.addPage(); y = margin; }
+      doc.setDrawColor(227, 118, 34);
+      doc.setFillColor(10, 22, 40);
+      doc.roundedRect(margin, y, maxWidth, 22, 2, 2, 'FD');
+      doc.setTextColor(248, 250, 252);
+      doc.setFontSize(9);
+      doc.text(`${h.user_name} (${h.user_role})`, margin + 4, y + 8);
+      doc.setFontSize(7);
+      doc.setTextColor(139, 184, 224);
+      doc.text(`Stage: ${h.stage}`, margin + 4, y + 15);
+      doc.setFontSize(7);
+      doc.setTextColor(90, 127, 168);
+      const ts = h.timestamp ? h.timestamp.split('T')[0] + ' ' + (h.timestamp.split('T')[1] ? h.timestamp.split('T')[1].substring(0, 5) : '') : '';
+      doc.text(`Signed: ${ts}`, margin + maxWidth / 2, y + 15);
+      y += 27;
+    });
+  }
+
+  // --- Footer ---
+  y = Math.max(y, 280);
+  doc.setFontSize(7);
+  doc.setTextColor(90, 127, 168);
+  doc.text(`Generated: ${new Date().toLocaleString()} | EazyTools Zambia Requisitions System`, margin, y + 5);
+
+  const safeTitle = req.req_id.replace(/[^a-zA-Z0-9_-]/g, '_');
+  doc.save(`${safeTitle}-approved.pdf`);
+  showToastNotification('PDF downloaded successfully');
+};
 
 // --- Globals for HTML onclick ---
 window.switchView = switchView;

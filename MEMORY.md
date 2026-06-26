@@ -136,3 +136,16 @@
   - Resubmit clears attachment list for fresh upload.
   - CSS: `.file-drop-zone`, `.file-item`, `.attachment-link`, `.modal-attachments-section` styles.
 - **Files:** `backend/package.json` (multer), `backend/src/middleware/upload.js` (new), `backend/src/config/database.js`, `backend/src/controllers/requisitionController.js`, `backend/src/routes/requisitions.js`, `backend/src/index.js`, `app.js`, `index.html`, `index.css`
+
+## 14. Download Approved Requisition PDF
+- Added "Download PDF" button in the requisition details modal header, visible once the requisition has passed all approval stages (status index >= "Pending Disbursement" in `STATUS_FLOW`).
+- Frontend-only PDF generation using jsPDF + jspdf-autotable (already loaded via CDN).
+- PDF layout:
+  - Company branding header (EazyTools Zambia)
+  - Info box with req ID, type, status, title, requestor, department, date, currency
+  - Items table with auto-calculated grand total
+  - Approval trail table (action, stage, user, role, timestamp)
+  - Digital signatures section for signed approvals
+  - Footer with generation timestamp
+- Button styled with emerald green to indicate approval completion.
+- **Files:** `app.js`, `index.html`, `index.css`
