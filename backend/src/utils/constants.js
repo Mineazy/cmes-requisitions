@@ -1,6 +1,7 @@
 const STATUS_FLOW = {
   'Admin': [
     'Pending',
+    'Reviewer',
     'Purchasing HOD',
     'Accounts HOD',
     'Director',
@@ -11,6 +12,7 @@ const STATUS_FLOW = {
   ],
   'Shop Use': [
     'Pending',
+    'Reviewer',
     'Operations HOD',
     'Pending Disbursement',
     'Issued',
@@ -19,6 +21,7 @@ const STATUS_FLOW = {
   ],
   'Returns Requisition': [
     'Pending',
+    'Reviewer',
     'Operations HOD',
     'Accounts HOD',
     'Pending Disbursement',
@@ -30,7 +33,8 @@ const STATUS_FLOW = {
 
 const STATUS_ACTOR_MAP = {
   'Admin': {
-    'Pending': 'Purchasing HOD',
+    'Pending': 'Reviewer',
+    'Reviewer': 'Purchasing HOD',
     'Purchasing HOD': 'Accounts HOD',
     'Accounts HOD': 'Director',
     'Director': 'Treasurer',
@@ -40,7 +44,8 @@ const STATUS_ACTOR_MAP = {
     'Change Cleared': 'Treasurer'
   },
   'Shop Use': {
-    'Pending': 'Operations HOD',
+    'Pending': 'Reviewer',
+    'Reviewer': 'Operations HOD',
     'Operations HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
@@ -48,7 +53,8 @@ const STATUS_ACTOR_MAP = {
     'Change Cleared': 'Treasurer'
   },
   'Returns Requisition': {
-    'Pending': 'Operations HOD',
+    'Pending': 'Reviewer',
+    'Reviewer': 'Operations HOD',
     'Operations HOD': 'Accounts HOD',
     'Accounts HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',

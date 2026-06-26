@@ -29,7 +29,7 @@ if (dbAvailable) {
       testUserId = existing.rows[0].id;
     }
 
-    const roles = ['Purchasing HOD', 'Accounts HOD', 'Director', 'Operations HOD', 'Treasurer'];
+    const roles = ['Reviewer', 'Purchasing HOD', 'Accounts HOD', 'Director', 'Operations HOD', 'Treasurer'];
     for (const role of roles) {
       const h = await bcrypt.hash('testpass123', 12);
       const email = `test.${role.toLowerCase().replace(/\s+/g, '.')}@test.co.zm`;

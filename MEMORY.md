@@ -137,7 +137,17 @@
   - CSS: `.file-drop-zone`, `.file-item`, `.attachment-link`, `.modal-attachments-section` styles.
 - **Files:** `backend/package.json` (multer), `backend/src/middleware/upload.js` (new), `backend/src/config/database.js`, `backend/src/controllers/requisitionController.js`, `backend/src/routes/requisitions.js`, `backend/src/index.js`, `app.js`, `index.html`, `index.css`
 
-## 14. Download Approved Requisition PDF
+## 14. Reviewer Stage & Role
+- Added `Reviewer` as the first approval stage after submission (before the existing approval chain).
+- Updated all flows:
+  - **Admin:** Pending → **Reviewer** → Purchasing HOD → Accounts HOD → Director → ...
+  - **Shop Use:** Pending → **Reviewer** → Operations HOD → ...
+  - **Returns Requisition:** Pending → **Reviewer** → Operations HOD → Accounts HOD → ...
+- Added `Reviewer` role to `VALID_ROLES`, admin user dropdown, test setup, and CSS avatar colors (purple `#6b21a8`).
+- Updated frontend `STATUS_FLOW`, `STATUS_ACTOR_MAP`, labels, `ROLE_INITIALS` (`RV`), and `STATUS_ORDER`.
+- **Files:** `backend/src/utils/constants.js`, `backend/src/controllers/adminController.js`, `backend/tests/api.test.js`, `app.js`, `index.html`, `index.css`
+
+## 15. Download Approved Requisition PDF
 - Added "Download PDF" button in the requisition details modal header, visible once the requisition has passed all approval stages (status index >= "Pending Disbursement" in `STATUS_FLOW`).
 - Frontend-only PDF generation using jsPDF + jspdf-autotable (already loaded via CDN).
 - PDF layout:

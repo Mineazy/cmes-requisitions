@@ -3,7 +3,7 @@ const { query } = require('../config/database');
 const { logAudit, getAuditLogs } = require('../services/auditService');
 
 const SALT_ROUNDS = 12;
-const VALID_ROLES = ['Admin', 'Purchasing HOD', 'Accounts HOD', 'Director', 'Operations HOD', 'Treasurer', 'Requestor'];
+const VALID_ROLES = ['Admin', 'Reviewer', 'Purchasing HOD', 'Accounts HOD', 'Director', 'Operations HOD', 'Treasurer', 'Requestor'];
 const PASSWORD_MIN_LENGTH = 8;
 
 function isValidRole(role) {
