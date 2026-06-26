@@ -226,6 +226,16 @@
               <div class="items-creator-title"><span>Required Items & Consumables</span><button type="button" class="action-btn-sm" onclick="window.addFormItemRow()">+ Add Item Row</button></div>
               <div id="items-rows-container"></div>
             </div>
+            <div class="attachments-block">
+              <div class="attachments-title">Attachments (Optional)</div>
+              <div class="file-drop-zone" id="file-drop-zone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;stroke:var(--text-muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <p>Drag & drop files here or <span class="file-browse-link">browse</span></p>
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">PDF, images, DOC, XLS, TXT, ZIP (max 10MB each)</p>
+                <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" style="display:none">
+              </div>
+              <div id="file-list"></div>
+            </div>
             <div class="form-total-bar"><span style="color:var(--text-secondary);font-size:0.95rem;">Total Request Amount:</span><span id="form-calculated-total" style="color:var(--copper-light);">K0.00</span></div>
             <div class="approval-flow-row" id="approval-flow-row">
               <div class="approval-flow-label">Approval Chain:</div>
@@ -425,6 +435,10 @@
           </div>
           <div class="modal-table-container">
             <table class="modal-table"><thead><tr><th>Description</th><th>Category</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Unit Price</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody id="detail-items-tbody"></tbody></table>
+          </div>
+          <div id="detail-attachments-section" class="modal-attachments-section" style="display:none;">
+            <h4 style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Attachments</h4>
+            <div id="detail-attachments-list" class="attachments-list"></div>
           </div>
           <div id="detail-actions-panel" class="modal-actions-panel" style="display:none;">
             <h4 class="actions-title">Requisition Actions Required</h4>

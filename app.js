@@ -259,6 +259,7 @@ function switchView(viewName) {
         document.querySelector('#view-create-requisition .view-title-block p').textContent = 'Create purchases or shop expenses for copper, drills, tools, PPE, or administrative items.';
       }
       renderApprovalFlow();
+      window.initFileUpload();
     }
   } else if (viewName === 'requisition-queue') {
     document.getElementById('nav-requisitions').classList.add('active');
@@ -355,10 +356,14 @@ function renderRequisitionCardHTML(req) {
     ? req.items.length === 1 ? req.items[0].description : `${req.items[0].description} + ${req.items.length - 1} more items`
     : 'No items';
 
+  const attachIcon = req.attachment_count > 0
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;stroke:var(--text-muted);flex-shrink:0;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>'
+    : '';
+
   return `<div class="requisition-card" onclick="window.openDetails('${req.req_id}')">
     <div><div class="card-top"><span class="req-id">${req.req_id}</span><span class="req-type-badge ${req.type.toLowerCase() === 'admin' ? 'admin' : 'shop'}">${req.type}</span></div>
     <div class="card-title">${req.title}</div>
-    <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${itemsText}</p></div>
+    <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${itemsText} ${attachIcon ? '&nbsp;' + attachIcon + ' ' + req.attachment_count + ' file(s)' : ''}</p></div>
     <div><div class="card-details"><span>By: ${req.requestor_name}</span><span>${req.created_at ? req.created_at.split('T')[0] : ''}</span></div>
     <div class="card-amount-block"><span class="status-badge ${statusClass}">${req.status === 'Pending' ? 'Pending (1st Review)' : req.status}</span>
     <span class="card-amount">${displayAmt}</span></div></div></div>`;
@@ -561,11 +566,85 @@ function removeFormItemRow(rowId) {
 function clearForm() {
   document.getElementById('new-req-form').reset();
   document.getElementById('items-rows-container').innerHTML = '';
+  document.getElementById('file-list').innerHTML = '';
+  attachedFiles = [];
   addFormItemRow();
   calculateFormTotal();
 }
 
 // --- Resubmit Rejected ---
+// --- File Attachments ---
+let attachedFiles = [];
+
+window.initFileUpload = function() {
+  const dropZone = document.getElementById('file-drop-zone');
+  const fileInput = document.getElementById('file-input');
+  if (!dropZone) return;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
+  });
+
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files);
+    addFiles(files);
+    fileInput.value = '';
+  });
+};
+
+function addFiles(files) {
+  const maxSize = 10 * 1024 * 1024;
+  for (const f of files) {
+    if (f.size > maxSize) {
+      showToastNotification(`"${f.name}" exceeds 10MB limit and was skipped.`);
+      continue;
+    }
+    attachedFiles.push(f);
+  }
+  renderFileList();
+}
+
+function removeFile(index) {
+  attachedFiles.splice(index, 1);
+  renderFileList();
+}
+
+function renderFileList() {
+  const container = document.getElementById('file-list');
+  if (!container) return;
+  if (attachedFiles.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = attachedFiles.map((f, i) => {
+    const size = f.size > 1024 * 1024
+      ? (f.size / (1024 * 1024)).toFixed(1) + ' MB'
+      : (f.size / 1024).toFixed(0) + ' KB';
+    return `<div class="file-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0;stroke:var(--copper);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+      <span class="file-item-name">${escHtml(f.name)}</span>
+      <span class="file-item-size">${size}</span>
+      <button type="button" class="file-remove-btn" onclick="window.removeFile(${i})" title="Remove file">&times;</button>
+    </div>`;
+  }).join('');
+}
+
+window.removeFile = removeFile;
+
 window.resubmitRequisition = function() {
   const req = state._resubmitReq;
   if (!req) return;
@@ -607,6 +686,9 @@ window.resubmitRequisition = function() {
       </button></div>`);
   });
 
+  document.getElementById('file-list').innerHTML = '';
+  attachedFiles = [];
+
   calculateFormTotal();
   state.currentView = 'create-requisition';
   closeDetailsModal();
@@ -636,17 +718,33 @@ async function handleFormSubmit(e) {
   });
 
   try {
-    const data = await apiFetch('POST', '/requisitions', {
-      type: document.getElementById('req-type').value,
-      title: document.getElementById('req-title').value,
-      department: document.getElementById('req-department').value,
-      currency: document.getElementById('req-currency').value,
-      items
-    });
+    const formData = new FormData();
+    formData.append('type', document.getElementById('req-type').value);
+    formData.append('title', document.getElementById('req-title').value);
+    formData.append('department', document.getElementById('req-department').value);
+    formData.append('currency', document.getElementById('req-currency').value);
+    formData.append('items', JSON.stringify(items));
+
+    for (const file of attachedFiles) {
+      formData.append('attachments', file);
+    }
+
+    const opts = {
+      method: 'POST',
+      headers: {}
+    };
+    if (state.token) opts.headers['Authorization'] = `Bearer ${state.token}`;
+    opts.body = formData;
+
+    const res = await fetch(`${API_BASE}/requisitions`, opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
 
     showToastNotification(data.message || 'Requisition submitted successfully!');
     document.getElementById('new-req-form').reset();
     document.getElementById('items-rows-container').innerHTML = '';
+    document.getElementById('file-list').innerHTML = '';
+    attachedFiles = [];
     addFormItemRow();
     calculateFormTotal();
     state._resubmitReq = null;
@@ -691,6 +789,27 @@ async function openDetails(reqId) {
       banner.style.display = 'flex';
       document.getElementById('detail-rejection-reason').textContent = req.rejection_reason || 'No reason provided.';
     } else { banner.style.display = 'none'; }
+
+    const attSection = document.getElementById('detail-attachments-section');
+    const attList = document.getElementById('detail-attachments-list');
+    const attachments = req.attachments || [];
+    if (attachments.length > 0) {
+      attSection.style.display = 'block';
+      attList.innerHTML = attachments.map(a => {
+        const icon = a.mime_type?.startsWith('image/') ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0;stroke:var(--copper);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0;stroke:var(--copper);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
+        const size = a.file_size > 1024 * 1024
+          ? (a.file_size / (1024 * 1024)).toFixed(1) + ' MB'
+          : (a.file_size / 1024).toFixed(0) + ' KB';
+        return `<a href="${API_BASE}/requisitions/${req.req_id}/attachments/${a.id}" target="_blank" class="attachment-link">
+          ${icon}
+          <span class="attachment-name">${escHtml(a.original_name)}</span>
+          <span class="attachment-size">${size}</span>
+        </a>`;
+      }).join('');
+    } else {
+      attSection.style.display = 'none';
+    }
 
     renderModalActionsPanel(req);
     renderStepper(req);

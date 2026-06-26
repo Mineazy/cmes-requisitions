@@ -98,3 +98,41 @@
 - Updated `docker-compose.yml` — removed PostgreSQL service, added `DATABASE_URL` / `JWT_SECRET` / SMTP env passthrough.
 - Updated tests (`setup.js`, `api.test.js`) for MySQL-compatible SQL.
 - **Files:** `backend/package.json`, `backend/src/config/database.js`, `backend/src/controllers/adminController.js`, `backend/src/controllers/authController.js`, `backend/src/controllers/requisitionController.js`, `backend/src/controllers/userController.js`, `backend/src/controllers/emailController.js`, `backend/src/services/emailService.js`, `backend/src/services/auditService.js`, `backend/src/seed.js`, `backend/.env.example`, `docker-compose.yml`, `backend/tests/setup.js`, `backend/tests/api.test.js`
+
+## 11. Returns Requisition Type
+- Added `Returns Requisition` as third requisition type alongside Admin and Shop Use.
+- Approval flow: Pending → Operations HOD → Accounts HOD → Pending Disbursement → Issued → Change Returned/Pending → Change Cleared.
+- Restructured `STATUS_ACTOR_MAP` from flat `{status: role}` to nested `{type: {status: role}}` to support per-type actor resolution.
+- Added `getNextActorRole(status, type)` helper to both backend (`constants.js`) and frontend (`app.js`).
+- Email notifications and `pendingActions` query updated to use per-type actor lookup.
+- Frontend `renderApprovalFlow()` uses `getNextActorRole()` to build per-type approval stepper.
+- **Files:** `backend/src/utils/constants.js`, `backend/src/controllers/requisitionController.js`, `backend/src/services/emailService.js`, `app.js`, `index.html`
+
+## 12. Theme Color Experiment (Reverted)
+- Attempted change to blue (#0000FE) / yellow (#FFFF00) / light (#EAF2EF) / dark (#172121) palette.
+- Commit `9d047b9` applied the change to CSS vars, JS theme references, HTML.
+- Commit `93bb2ec` reverted back to original copper (#E37622) / emerald (#10B981) / dark navy (#060D1A) theme.
+- Current state is the original copper/emerald/dark-navy theme — no net change.
+- **Files (reverted):** `index.css`, `index.html`, `app.js`
+
+## 13. File Attachments for Requisitions
+- Added ability to attach documents (PDF, images, DOC, XLS, TXT, ZIP, RAR) when creating a new requisition.
+- **Backend:**
+  - New `attachments` table: `id`, `requisition_id`, `file_name`, `original_name`, `mime_type`, `file_size`, `uploaded_at`.
+  - Installed `multer` for multipart form handling with disk storage to `backend/uploads/attachments/`.
+  - Whitelist-based file type filtering and 10MB per-file limit.
+  - Route `POST /` now uses `upload.array('attachments', 10)` before the controller.
+  - `create()` controller parses `items` from JSON string (since multipart), stores file metadata inside the transaction.
+  - `getById()` returns `attachments[]` with full metadata.
+  - `list()` returns `attachment_count` per requisition.
+  - New `GET /:id/attachments/:fileId` endpoint serves files with proper Content-Type and Content-Disposition.
+  - `/uploads/` served statically in `index.js`.
+- **Frontend:**
+  - Drag-and-drop file upload zone with click-to-browse fallback.
+  - File list with name, size display, and remove button.
+  - `handleFormSubmit()` switched from `apiFetch` (JSON) to raw `fetch` with `FormData`.
+  - Details modal shows attachments as clickable links (open in new tab).
+  - Queue/dashboard cards show paperclip indicator + file count when attachments exist.
+  - Resubmit clears attachment list for fresh upload.
+  - CSS: `.file-drop-zone`, `.file-item`, `.attachment-link`, `.modal-attachments-section` styles.
+- **Files:** `backend/package.json` (multer), `backend/src/middleware/upload.js` (new), `backend/src/config/database.js`, `backend/src/controllers/requisitionController.js`, `backend/src/routes/requisitions.js`, `backend/src/index.js`, `app.js`, `index.html`, `index.css`

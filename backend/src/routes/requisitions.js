@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const requisitionController = require('../controllers/requisitionController');
 const { authenticateToken, requireRole } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // All routes require authentication
 router.use(authenticateToken);
@@ -15,8 +16,8 @@ router.get('/pending', requisitionController.pendingActions);
 // Get single requisition by ID
 router.get('/:id', requisitionController.getById);
 
-// Create new requisition
-router.post('/', requireRole('Requestor'), requisitionController.create);
+// Create new requisition (with optional file attachments)
+router.post('/', requireRole('Requestor'), upload.array('attachments', 10), requisitionController.create);
 
 // Process approval/rejection
 router.post('/:id/approve', requisitionController.processApproval);
@@ -32,6 +33,9 @@ router.post('/:id/submit-receipts', requireRole('Requestor'), requisitionControl
 
 // Treasurer: Clear requisition
 router.post('/:id/clear', requireRole('Treasurer'), requisitionController.clearRequisition);
+
+// Download attachment file
+router.get('/:id/attachments/:fileId', requisitionController.downloadAttachment);
 
 // Verify QR code
 router.post('/verify-qr', requisitionController.verifyQR);
