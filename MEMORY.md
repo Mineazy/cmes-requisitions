@@ -164,3 +164,10 @@
   - Footer with generation timestamp
 - Button styled with emerald green to indicate approval completion.
 - **Files:** `app.js`, `index.html`, `index.css`
+
+## 16. Fix Digital Signature Verification
+- Root cause: QR data built by frontend in `renderSignatures()` was missing `v:2` field and had a different timestamp format (with seconds) than what the backend signed — causing `JSON.stringify` mismatch in `verifySignature`.
+- Added `v:2`, `publicKeyPem`, and fixed timestamp trimming (removed `:SS` suffix) in frontend QR data construction.
+- Updated backend `verifyQRCode()` to destructure `publicKeyPem` separately from payload so it doesn't pollute the verified payload.
+- All 9 crypto unit tests pass.
+- **Files:** `app.js`, `backend/src/services/cryptoService.js`

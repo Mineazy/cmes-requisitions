@@ -982,12 +982,17 @@ function renderSignatures(req) {
   }
   grid.innerHTML = stamps.map((st, idx) => {
     const cardId = `sig_card_${idx}`;
+    const qrTime = st.timestamp
+      ? st.timestamp.split('.')[0].replace('T', ' ').replace(/:\d\d$/, '')
+      : '';
     const qrData = JSON.stringify({
       id: req.req_id,
       signer: st.user_name,
       role: st.user_role,
       stage: st.stage,
-      time: st.timestamp ? st.timestamp.split('.')[0].replace('T', ' ') : '',
+      time: qrTime,
+      v: 2,
+      publicKeyPem: st.public_key_pem || '',
       sig: st.signature
     });
     setTimeout(() => drawQRCode(cardId, qrData), 50);

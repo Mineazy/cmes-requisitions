@@ -93,13 +93,13 @@ function createVerificationPayload(reqId, signer, role, stage, timestamp) {
 function verifyQRCode(qrDataString) {
   try {
     const data = JSON.parse(qrDataString);
-    const { sig, ...payload } = data;
+    const { sig, publicKeyPem, ...payload } = data;
 
     if (!sig) {
       return { valid: false, error: 'No signature found in QR data' };
     }
 
-    const isValid = verifySignature(payload, sig, data.publicKeyPem || getPublicKey());
+    const isValid = verifySignature(payload, sig, publicKeyPem || getPublicKey());
 
     return {
       valid: isValid,
