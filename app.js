@@ -47,6 +47,43 @@ function getNextActorRole(status, type) {
   return typeMap[status] || null;
 }
 
+const DEFAULT_CATEGORIES = ['Heavy Equipment', 'Drills & Tools', 'Safety Wear (PPE)', 'Consumables', 'Office Admin'];
+
+function getCategories() {
+  const stored = localStorage.getItem('requisition_categories');
+  if (stored) {
+    try { return JSON.parse(stored); } catch (e) {}
+  }
+  return [...DEFAULT_CATEGORIES];
+}
+
+function addCategory(name) {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const cats = getCategories();
+  if (!cats.includes(trimmed)) {
+    cats.push(trimmed);
+    localStorage.setItem('requisition_categories', JSON.stringify(cats));
+    refreshCategoryDropdowns();
+  }
+}
+
+function refreshCategoryDropdowns() {
+  const cats = getCategories();
+  const opts = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  document.querySelectorAll('.item-cat').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = opts;
+    if (cats.includes(cur)) sel.value = cur;
+  });
+}
+
+function renderCategoryOptions(selected) {
+  return getCategories().map(c =>
+    `<option value="${c}" ${selected === c ? 'selected' : ''}>${c}</option>`
+  ).join('');
+}
+
 let state = {
   token: localStorage.getItem('cmes_token') || null,
   currentUser: null,
@@ -522,9 +559,7 @@ function addFormItemRow() {
       <input type="text" class="item-desc" required placeholder="e.g. Komatsu seal rings"></div>
     <div class="form-group"><div class="item-row-header">Category</div>
       <select class="item-cat" required>
-        <option value="Heavy Equipment">Heavy Equipment</option><option value="Drills & Tools">Drills & Tools</option>
-        <option value="Safety Wear (PPE)">Safety Wear (PPE)</option><option value="Consumables" selected>Consumables</option>
-        <option value="Office Admin">Office Admin</option>
+        ${renderCategoryOptions('Consumables')}
       </select></div>
     <div class="form-group"><div class="item-row-header">Qty</div>
       <input type="number" class="item-qty" min="1" value="1" required oninput="window.calculateRowSubtotal('${rowId}')"></div>
@@ -538,6 +573,13 @@ function addFormItemRow() {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
     </button></div>`);
 }
+
+window.promptAddCategory = function() {
+  const name = prompt('Enter new category name:');
+  if (name) {
+    addCategory(name);
+  }
+};
 
 window.calculateRowSubtotal = function(rowId) {
   const row = document.getElementById(rowId);
@@ -670,11 +712,7 @@ window.resubmitRequisition = function() {
         <input type="text" class="item-desc" required value="${escHtml(it.description || it.desc || '')}"></div>
       <div class="form-group"><div class="item-row-header">Category</div>
         <select class="item-cat" required>
-          <option value="Heavy Equipment" ${(it.category||'')==='Heavy Equipment'?'selected':''}>Heavy Equipment</option>
-          <option value="Drills & Tools" ${(it.category||'')==='Drills & Tools'?'selected':''}>Drills & Tools</option>
-          <option value="Safety Wear (PPE)" ${(it.category||'')==='Safety Wear (PPE)'?'selected':''}>Safety Wear (PPE)</option>
-          <option value="Consumables" ${(it.category||'')==='Consumables'?'selected':''}>Consumables</option>
-          <option value="Office Admin" ${(it.category||'')==='Office Admin'?'selected':''}>Office Admin</option>
+          ${renderCategoryOptions(it.category||'')}
         </select></div>
       <div class="form-group"><div class="item-row-header">Qty</div>
         <input type="number" class="item-qty" min="1" value="${it.quantity || 1}" required oninput="window.calculateRowSubtotal('${rowId}')"></div>

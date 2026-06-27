@@ -219,11 +219,11 @@
               <div class="form-group"><label for="req-type">Requisition Type</label><select id="req-type" required onchange="window.renderApprovalFlow && window.renderApprovalFlow()"><option value="Admin">Admin Requisition (3 Approvers)</option><option value="Shop Use">Shop Use Requisition (1 Approver)</option><option value="Returns Requisition">Returns Requisition (1 Approver)</option></select></div>
             </div>
             <div class="form-grid-2">
-              <div class="form-group"><label for="req-department">Department / Branch</label><select id="req-department" required><option value="Mumba">Mumba</option><option value="Mpika">Mpika</option><option value="Chaisa">Chaisa</option></select></div>
+              <div class="form-group"><label for="req-department">Department / Branch</label><select id="req-department" required><option value="Mumbwa">Mumbwa</option><option value="Mumbwa Rd">Mumbwa Rd</option><option value="Mpika">Mpika</option><option value="Chaisa">Chaisa</option></select></div>
               <div class="form-group"><label for="req-currency">Requisition Currency</label><select id="req-currency" required><option value="ZMW">ZMW - Zambian Kwacha (K)</option><option value="USD">USD - United States Dollar ($)</option></select></div>
             </div>
             <div class="items-creator-block">
-              <div class="items-creator-title"><span>Required Items & Consumables</span><button type="button" class="action-btn-sm" onclick="window.addFormItemRow()">+ Add Item Row</button></div>
+              <div class="items-creator-title"><span>Required Items & Consumables</span><button type="button" class="action-btn-sm" onclick="window.addFormItemRow()">+ Add Item Row</button><button type="button" class="action-btn-sm" onclick="window.promptAddCategory()" style="margin-left:6px;">+ Category</button></div>
               <div id="items-rows-container"></div>
             </div>
             <div class="attachments-block">
