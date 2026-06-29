@@ -799,7 +799,14 @@ async function handleFormSubmit(e) {
 // --- Details Modal ---
 async function openDetails(reqId) {
   try {
-    const data = await apiFetch('GET', `/requisitions/${reqId}`);
+    const [data, profileData] = await Promise.all([
+      apiFetch('GET', `/requisitions/${reqId}`),
+      apiFetch('GET', '/auth/profile').catch(() => null)
+    ]);
+    if (profileData) {
+      state.currentUser = profileData.user;
+      localStorage.setItem('cmes_user', JSON.stringify(profileData.user));
+    }
     const req = data.requisition;
     state.selectedRequisition = req;
 
