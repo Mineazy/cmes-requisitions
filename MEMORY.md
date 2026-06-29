@@ -165,7 +165,14 @@
 - Button styled with emerald green to indicate approval completion.
 - **Files:** `app.js`, `index.html`, `index.css`
 
-## 16. Fix Digital Signature Verification
+## 16. Branch Update + Dynamic Categories
+- Renamed "Mumba" → "Mumbwa" and added "Mumbwa Rd" as a new branch option in the Department/Branch dropdown.
+- Added dynamic category management: categories stored in `localStorage` with `getCategories()`, `addCategory()`, `refreshCategoryDropdowns()` helpers.
+- "+ Category" button in items creator prompts for a new category name and updates all dropdowns live.
+- Both `addFormItemRow()` and `resubmitRequisition()` render categories from the shared list via `renderCategoryOptions()`.
+- **Files:** `index.html`, `app.js`
+
+## 17. Fix Digital Signature Verification
 - Root cause: QR data built by frontend in `renderSignatures()` was missing `v:2` field and had a different timestamp format (with seconds) than what the backend signed — causing `JSON.stringify` mismatch in `verifySignature`.
 - Added `v:2`, `publicKeyPem`, and fixed timestamp trimming (removed `:SS` suffix) in frontend QR data construction.
 - Updated backend `verifyQRCode()` to destructure `publicKeyPem` separately from payload so it doesn't pollute the verified payload.

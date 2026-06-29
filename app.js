@@ -1059,6 +1059,8 @@ async function processApproval(approve) {
       showToastNotification(data.message || `Requisition ${req.req_id} rejected.`);
       closeDetailsModal();
       await loadInitialData();
+      renderDashboard();
+      renderQueue();
     } catch (err) { alert('Rejection failed: ' + err.message); }
   } else {
     try {
@@ -1069,6 +1071,8 @@ async function processApproval(approve) {
       }
       closeDetailsModal();
       await loadInitialData();
+      renderDashboard();
+      renderQueue();
     } catch (err) { alert('Approval failed: ' + err.message); }
   }
 }
@@ -1081,6 +1085,8 @@ async function processTreasurerQueue() {
     showToastNotification(data.message || 'Queued for disbursement.');
     closeDetailsModal();
     await loadInitialData();
+    renderDashboard();
+    renderQueue();
   } catch (err) { alert('Failed: ' + err.message); }
 }
 
@@ -1092,6 +1098,8 @@ async function processTreasurerDisburse() {
     showToastNotification(data.message || 'Funds disbursed.');
     closeDetailsModal();
     await loadInitialData();
+    renderDashboard();
+    renderQueue();
   } catch (err) { alert('Failed: ' + err.message); }
 }
 
@@ -1104,6 +1112,8 @@ async function processRequestorSubmitReceipts() {
     showToastNotification(data.message || 'Expenses filed.');
     closeDetailsModal();
     await loadInitialData();
+    renderDashboard();
+    renderQueue();
   } catch (err) { alert('Failed: ' + err.message); }
 }
 
@@ -1115,6 +1125,8 @@ async function processTreasurerClear() {
     showToastNotification(data.message || 'Requisition cleared.');
     closeDetailsModal();
     await loadInitialData();
+    renderDashboard();
+    renderQueue();
   } catch (err) { alert('Failed: ' + err.message); }
 }
 
@@ -1282,7 +1294,16 @@ async function adminRefreshStats() {
     document.getElementById('admin-stat-pending-sub').textContent = pendingStatuses.map(s => `${s.status}: ${s.count}`).join(' | ') || 'No pending items';
     document.getElementById('admin-stat-closed').textContent = closedCount;
   } catch (err) {
-    console.warn('Stats refresh failed:', err.message);
+    const msg = err.message || '';
+    if (msg.includes('Authentication required') || msg.includes('Invalid or expired token') || msg.includes('Access denied')) {
+      if (adminRefreshInterval) {
+        clearInterval(adminRefreshInterval);
+        adminRefreshInterval = null;
+      }
+      logout();
+      return;
+    }
+    console.warn('Stats refresh failed:', msg);
   }
 }
 
@@ -1427,8 +1448,8 @@ async function handleAdminUserSubmit(e) {
 }
 
 async function adminResetPassword(userId) {
-  const newPw = prompt('Enter new password (min 6 characters):');
-  if (!newPw || newPw.length < 6) return;
+  const newPw = prompt('Enter new password (min 8 characters):');
+  if (!newPw || newPw.length < 8) return;
   try {
     await apiFetch('POST', '/admin/users/' + userId + '/reset-password', { password: newPw });
     showToastNotification('Password reset successfully');
