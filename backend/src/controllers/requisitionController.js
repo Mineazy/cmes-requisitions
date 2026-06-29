@@ -219,20 +219,23 @@ async function processApproval(req, res) {
         return res.status(400).json({ error: 'A reason is required for rejection' });
       }
 
-      await query(
-        `UPDATE requisitions SET status = 'Rejected', rejection_reason = ?, updated_at = NOW() WHERE id = ?`,
-        [reason, requisition.id]
-      );
-
-      await query(
-        `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
-         VALUES (?, ?, 'Rejected', ?, ?, NOW())`,
-        [requisition.id, requisition.status, req.user.id, reason]
-      );
+      await transaction(async (client) => {
+        await client.query(
+          `UPDATE requisitions SET status = 'Rejected', rejection_reason = ?, updated_at = NOW() WHERE id = ?`,
+          [reason, requisition.id]
+        );
+        await client.query(
+          `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
+           VALUES (?, ?, 'Rejected', ?, ?, NOW())`,
+          [requisition.id, requisition.status, req.user.id, reason]
+        );
+      });
 
       requisition.rejection_reason = reason;
       requisition.status = 'Rejected';
-      await emailService.notifyRejection(requisition);
+      emailService.notifyRejection(requisition).catch(err => {
+        console.error('Rejection notification failed:', err.message);
+      });
 
       res.json({ message: `Requisition ${reqId} rejected`, status: 'Rejected' });
 
@@ -261,23 +264,22 @@ async function processApproval(req, res) {
       timestamp
     );
 
-    await query(`UPDATE requisitions SET status = ?, updated_at = NOW() WHERE id = ?`, [nextState, requisition.id]);
-
-    await query(
-      `INSERT INTO approvals (requisition_id, stage, action, user_id, signature, public_key_pem, timestamp, reason)
-       VALUES (?, ?, 'Approved', ?, ?, ?, NOW(), ?)`,
-      [
-        requisition.id,
-        requisition.status,
-        req.user.id,
-        sig.signature,
-        sig.publicKeyPem,
-        reason || ''
-      ]
-    );
+    await transaction(async (client) => {
+      await client.query(
+        `UPDATE requisitions SET status = ?, updated_at = NOW() WHERE id = ?`,
+        [nextState, requisition.id]
+      );
+      await client.query(
+        `INSERT INTO approvals (requisition_id, stage, action, user_id, signature, public_key_pem, timestamp, reason)
+         VALUES (?, ?, 'Approved', ?, ?, ?, NOW(), ?)`,
+        [requisition.id, requisition.status, req.user.id, sig.signature, sig.publicKeyPem, reason || '']
+      );
+    });
 
     requisition.status = nextState;
-    await emailService.notifyNextApprover(requisition);
+    emailService.notifyNextApprover(requisition).catch(err => {
+      console.error('Approval notification failed:', err.message);
+    });
 
     res.json({
       message: `Requisition ${reqId} approved`,

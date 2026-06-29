@@ -1005,7 +1005,7 @@ function renderSignatures(req) {
 
 function escapeStr(str) {
   if (!str) return '{}';
-  return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 function drawQRCode(elementId, text) {
@@ -1057,6 +1057,8 @@ async function processApproval(approve) {
     try {
       const data = await apiFetch('POST', `/requisitions/${req.req_id}/approve`, { action: 'reject', reason });
       showToastNotification(data.message || `Requisition ${req.req_id} rejected.`);
+      const reqInState = state.requisitions.find(r => r.req_id === req.req_id);
+      if (reqInState) reqInState.status = data.status;
       closeDetailsModal();
       await loadInitialData();
       renderDashboard();
@@ -1069,6 +1071,8 @@ async function processApproval(approve) {
       if (data.signature) {
         showToastNotification('Cryptographic signature appended to approval.');
       }
+      const reqInState = state.requisitions.find(r => r.req_id === req.req_id);
+      if (reqInState) reqInState.status = data.status;
       closeDetailsModal();
       await loadInitialData();
       renderDashboard();
