@@ -3,17 +3,17 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   : '/api';
 
 const STATUS_FLOW = {
-  'Admin': ['Pending','Reviewer','Purchasing HOD','Accounts HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Admin': ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Shop Use': ['Pending','Reviewer','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Returns Requisition': ['Pending','Reviewer','Operations HOD','Accounts HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
+  'Returns Requisition': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
 const STATUS_ACTOR_MAP = {
   'Admin': {
     'Pending': 'Reviewer',
     'Reviewer': 'Purchasing HOD',
-    'Purchasing HOD': 'Accounts HOD',
-    'Accounts HOD': 'Director',
+    'Purchasing HOD': 'Finance HOD',
+    'Finance HOD': 'Director',
     'Director': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
@@ -32,8 +32,8 @@ const STATUS_ACTOR_MAP = {
   'Returns Requisition': {
     'Pending': 'Reviewer',
     'Reviewer': 'Operations HOD',
-    'Operations HOD': 'Accounts HOD',
-    'Accounts HOD': 'Treasurer',
+    'Operations HOD': 'Finance HOD',
+    'Finance HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
     'Change Returned/Pending': 'Treasurer',
@@ -383,7 +383,7 @@ function renderRequisitionCardHTML(req) {
   const displayAmt = `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   let statusClass = 'status-pending';
   if (req.status === 'Purchasing HOD') statusClass = 'status-approver1';
-  else if (req.status === 'Accounts HOD') statusClass = 'status-approver2';
+  else if (req.status === 'Finance HOD') statusClass = 'status-approver2';
   else if (req.status === 'Director') statusClass = 'status-approver3';
   else if (req.status === 'Operations HOD') statusClass = 'status-approver1';
   else if (req.status === 'Pending Disbursement') statusClass = 'status-disbursement';
@@ -474,7 +474,7 @@ function renderQueue() {
     );
   }
 
-  const STATUS_ORDER = ['Pending','Reviewer','Purchasing HOD','Accounts HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
+  const STATUS_ORDER = ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
   filtered.sort((a, b) => {
     const aIdx = STATUS_ORDER.indexOf(a.status);
     const bIdx = STATUS_ORDER.indexOf(b.status);
@@ -1215,7 +1215,7 @@ function renderApprovalFlow() {
     'Pending': 'Created',
     'Reviewer': 'Review',
     'Purchasing HOD': 'Purchasing',
-    'Accounts HOD': 'Accounts',
+    'Finance HOD': 'Finance',
     'Director': 'Director',
     'Operations HOD': 'Operations',
     'Pending Disbursement': 'Disburse',
@@ -1224,7 +1224,7 @@ function renderApprovalFlow() {
     'Change Cleared': 'Cleared'
   };
   const ROLE_INITIALS = {
-    'Reviewer': 'RV','Purchasing HOD': 'PH','Accounts HOD': 'AH',
+    'Reviewer': 'RV','Purchasing HOD': 'PH','Finance HOD': 'FH',
     'Director': 'DR','Operations HOD': 'OH',
     'Treasurer': 'T','Requestor': 'CR'
   };

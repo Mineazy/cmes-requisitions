@@ -14,7 +14,7 @@ describe('CryptoService', () => {
   });
 
   test('verifySignature returns true for valid signature', () => {
-    const data = { id: 'REQ-2026-0002', signer: 'Kondwelani Banda', role: 'Accounts HOD' };
+    const data = { id: 'REQ-2026-0002', signer: 'Kondwelani Banda', role: 'Finance HOD' };
     const signature = cryptoService.signApproval(data);
     const publicKey = cryptoService.getPublicKey();
     const result = cryptoService.verifySignature(data, signature, publicKey);

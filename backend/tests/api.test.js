@@ -29,7 +29,7 @@ if (dbAvailable) {
       testUserId = existing.rows[0].id;
     }
 
-    const roles = ['Reviewer', 'Purchasing HOD', 'Accounts HOD', 'Director', 'Operations HOD', 'Treasurer'];
+    const roles = ['Reviewer', 'Purchasing HOD', 'Finance HOD', 'Director', 'Operations HOD', 'Treasurer'];
     for (const role of roles) {
       const h = await bcrypt.hash('testpass123', 12);
       const email = `test.${role.toLowerCase().replace(/\s+/g, '.')}@test.co.zm`;
@@ -169,19 +169,19 @@ conditionalDescribe('Requisitions CRUD', () => {
 });
 
 conditionalDescribe('Full Approval Workflow', () => {
-  let purchasingToken = '', accountsToken = '', directorToken = '', treasurerToken = '';
+  let purchasingToken = '', financeToken = '', directorToken = '', treasurerToken = '';
 
   beforeAll(async () => {
     const users = [
       { email: 'test.purchasing.hod@test.co.zm', role: 'Purchasing HOD' },
-      { email: 'test.accounts.hod@test.co.zm', role: 'Accounts HOD' },
+      { email: 'test.finance.hod@test.co.zm', role: 'Finance HOD' },
       { email: 'test.director@test.co.zm', role: 'Director' },
       { email: 'test.treasurer@test.co.zm', role: 'Treasurer' }
     ];
     for (const u of users) {
       const res = await request(app).post('/api/auth/login').send({ email: u.email, password: 'testpass123' });
       if (u.role === 'Purchasing HOD') purchasingToken = res.body.token;
-      if (u.role === 'Accounts HOD') accountsToken = res.body.token;
+      if (u.role === 'Finance HOD') financeToken = res.body.token;
       if (u.role === 'Director') directorToken = res.body.token;
       if (u.role === 'Treasurer') treasurerToken = res.body.token;
     }
@@ -196,16 +196,16 @@ conditionalDescribe('Full Approval Workflow', () => {
     expect(res.body.signature).toBeDefined();
   });
 
-  test('Step 2: Accounts HOD approves (Purchasing HOD -> Accounts HOD)', async () => {
+  test('Step 2: Finance HOD approves (Purchasing HOD -> Finance HOD)', async () => {
     const res = await request(app)
-      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${accountsToken}`)
+      .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${financeToken}`)
       .send({ action: 'approve' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('Accounts HOD');
+    expect(res.body.status).toBe('Finance HOD');
     expect(res.body.signature).toBeDefined();
   });
 
-  test('Step 3: Director approves (Accounts HOD -> Director)', async () => {
+  test('Step 3: Director approves (Finance HOD -> Director)', async () => {
     const res = await request(app)
       .post(`/api/requisitions/${testReqId}/approve`).set('Authorization', `Bearer ${directorToken}`)
       .send({ action: 'approve' });
