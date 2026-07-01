@@ -47,6 +47,17 @@ function getNextActorRole(status, type) {
   return typeMap[status] || null;
 }
 
+function statusDisplayName(status) {
+  const map = {
+    'Pending': 'Pending (1st Review)',
+    'Reviewer': 'HOD Review',
+    'Pending Disbursement': 'Treasurer Disbursement',
+    'Change Returned/Pending': 'Receipts & Change Filing',
+    'Change Cleared': 'Reconciled & Closed'
+  };
+  return map[status] || status;
+}
+
 const DEFAULT_CATEGORIES = ['Heavy Equipment', 'Drills & Tools', 'Safety Wear (PPE)', 'Consumables', 'Office Admin'];
 
 function getCategories() {
@@ -405,7 +416,7 @@ function renderRequisitionCardHTML(req) {
     <div class="card-title">${req.title}</div>
     <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${itemsText} ${attachIcon ? '&nbsp;' + attachIcon + ' ' + req.attachment_count + ' file(s)' : ''}</p></div>
     <div><div class="card-details"><span>By: ${req.requestor_name}</span><span>${req.created_at ? req.created_at.split('T')[0] : ''}</span></div>
-    <div class="card-amount-block"><span class="status-badge ${statusClass}">${req.status === 'Pending' ? 'Pending (1st Review)' : req.status}</span>
+    <div class="card-amount-block"><span class="status-badge ${statusClass}">${statusDisplayName(req.status)}</span>
     <span class="card-amount">${displayAmt}</span></div></div></div>`;
 }
 
@@ -912,14 +923,6 @@ function renderModalActionsPanel(req, userOverride) {
 
   const userRole = user ? user.role : '';
   const activeRequiredRole = getNextActorRole(req.status, req.type);
-  console.log('renderModalActionsPanel debug:', {
-    reqId: req.req_id,
-    status: JSON.stringify(req.status),
-    type: JSON.stringify(req.type),
-    userRole: JSON.stringify(userRole),
-    activeRequiredRole: JSON.stringify(activeRequiredRole),
-    user: user ? { id: user.id, name: user.name, role: user.role } : null
-  });
   let showPanel = false;
 
   if (activeRequiredRole && activeRequiredRole === userRole) {
@@ -977,13 +980,13 @@ function renderStepper(req) {
         const history = req.history || [];
         const hist = history[history.length - 1];
         statusText = `Rejected by ${hist ? hist.user_name : ''}: "${hist ? (hist.reason || '') : ''}"`;
-      } else { statusClass += ' active-stage'; statusText = 'Awaiting action'; }
+      } else {
+        statusClass += ' active-stage';
+        const nextRole = getNextActorRole(stage, req.type);
+        statusText = nextRole ? `Awaiting ${nextRole}` : 'Awaiting action';
+      }
     }
-    let label = stage;
-    if (stage === 'Pending') label = 'Created (Pending)';
-    else if (stage === 'Pending Disbursement') label = 'Treasurer Disbursement';
-    else if (stage === 'Change Returned/Pending') label = 'Receipts & Change Filing';
-    else if (stage === 'Change Cleared') label = 'Reconciled & Closed';
+    const label = stage === 'Pending' ? 'Created (Pending)' : statusDisplayName(stage);
     stepperHtml += `<li class="${statusClass}"><span class="stepper-label">${label}</span><span class="stepper-time">${statusText}</span></li>`;
   });
   stepperEl.innerHTML = stepperHtml;
@@ -1267,7 +1270,7 @@ async function renderAdminPanel() {
     const pendingCount = pendingStatuses.reduce((a, s) => a + parseInt(s.count), 0);
     const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
     document.getElementById('admin-stat-pending').textContent = pendingCount;
-    const pendingBreakdown = pendingStatuses.map(s => `${s.status}: ${s.count}`).join(' | ');
+    const pendingBreakdown = pendingStatuses.map(s => `${statusDisplayName(s.status)}: ${s.count}`).join(' | ');
     document.getElementById('admin-stat-pending-sub').textContent = pendingBreakdown || 'No pending items';
     document.getElementById('admin-stat-closed').textContent = closedCount;
 
@@ -1311,7 +1314,7 @@ async function adminRefreshStats() {
     const pendingCount = pendingStatuses.reduce((a, s) => a + parseInt(s.count), 0);
     const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
     document.getElementById('admin-stat-pending').textContent = pendingCount;
-    document.getElementById('admin-stat-pending-sub').textContent = pendingStatuses.map(s => `${s.status}: ${s.count}`).join(' | ') || 'No pending items';
+    document.getElementById('admin-stat-pending-sub').textContent = pendingStatuses.map(s => `${statusDisplayName(s.status)}: ${s.count}`).join(' | ') || 'No pending items';
     document.getElementById('admin-stat-closed').textContent = closedCount;
   } catch (err) {
     const msg = err.message || '';
@@ -1360,7 +1363,7 @@ function renderAdminRequisitions(requisitions) {
         <p>${escHtml(r.requestor_name)} &middot; ${r.type} &middot; ${r.currency === 'ZMW' ? 'K' : '$'}${parseFloat(r.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <span class="status-badge ${badge}">${r.status}</span>
+        <span class="status-badge ${badge}">${statusDisplayName(r.status)}</span>
         <button class="action-btn-sm" onclick="window.openDetails('${r.req_id}')">View</button>
       </div>
     </div>`;

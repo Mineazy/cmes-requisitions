@@ -319,15 +319,16 @@
                   <input type="text" id="admin-req-search" placeholder="Search req ID, title, requestor..." style="padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.8rem;width:220px;">
                   <select id="admin-req-status-filter" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.8rem;">
                     <option value="">All Statuses</option>
-                    <option value="Pending">Pending</option>
+                    <option value="Pending">Pending (1st Review)</option>
+                    <option value="Reviewer">HOD Review</option>
                     <option value="Purchasing HOD">Purchasing HOD</option>
                     <option value="Finance HOD">Finance HOD</option>
                     <option value="Director">Director</option>
                     <option value="Operations HOD">Operations HOD</option>
-                    <option value="Pending Disbursement">Pending Disbursement</option>
+                    <option value="Pending Disbursement">Treasurer Disbursement</option>
                     <option value="Issued">Issued</option>
-                    <option value="Change Returned/Pending">Change Returned</option>
-                    <option value="Change Cleared">Change Cleared</option>
+                    <option value="Change Returned/Pending">Receipts &amp; Change Filing</option>
+                    <option value="Change Cleared">Reconciled &amp; Closed</option>
                     <option value="Rejected">Rejected</option>
                   </select>
                   <button class="action-btn-sm" id="admin-req-refresh">Refresh</button>
