@@ -912,6 +912,14 @@ function renderModalActionsPanel(req, userOverride) {
 
   const userRole = user ? user.role : '';
   const activeRequiredRole = getNextActorRole(req.status, req.type);
+  console.log('renderModalActionsPanel debug:', {
+    reqId: req.req_id,
+    status: JSON.stringify(req.status),
+    type: JSON.stringify(req.type),
+    userRole: JSON.stringify(userRole),
+    activeRequiredRole: JSON.stringify(activeRequiredRole),
+    user: user ? { id: user.id, name: user.name, role: user.role } : null
+  });
   let showPanel = false;
 
   if (activeRequiredRole && activeRequiredRole === userRole) {
