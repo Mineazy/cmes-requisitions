@@ -866,7 +866,7 @@ async function openDetails(reqId) {
       attSection.style.display = 'none';
     }
 
-    renderModalActionsPanel(req);
+    renderModalActionsPanel(req, profileData ? profileData.user : null);
     renderStepper(req);
     renderSignatures(req);
     document.getElementById('requisition-details-modal').classList.add('active');
@@ -883,7 +883,8 @@ function closeDetailsModal() {
   renderQueue();
 }
 
-function renderModalActionsPanel(req) {
+function renderModalActionsPanel(req, userOverride) {
+  const user = userOverride || state.currentUser;
   const actionsPanel = document.getElementById('detail-actions-panel');
   const appBlock = document.getElementById('approver-actions-block');
   const tDisburseBlock = document.getElementById('treasurer-actions-block');
@@ -899,7 +900,7 @@ function renderModalActionsPanel(req) {
   reqResubmitBlock.style.display = 'none';
 
   if (req.status === 'Rejected') {
-    if (state.currentUser && req.requestor_id === state.currentUser.id) {
+    if (user && req.requestor_id === user.id) {
       actionsPanel.style.display = 'block';
       reqResubmitBlock.style.display = 'block';
       state._resubmitReq = req;
@@ -909,7 +910,7 @@ function renderModalActionsPanel(req) {
 
   if (req.status === 'Change Cleared') return;
 
-  const userRole = state.currentUser ? state.currentUser.role : '';
+  const userRole = user ? user.role : '';
   const activeRequiredRole = getNextActorRole(req.status, req.type);
   let showPanel = false;
 
