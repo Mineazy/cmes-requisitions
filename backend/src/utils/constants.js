@@ -14,6 +14,7 @@ const STATUS_FLOW = {
     'Pending',
     'Reviewer',
     'Operations HOD',
+    'Finance HOD',
     'Pending Disbursement',
     'Issued',
     'Change Returned/Pending',
@@ -46,7 +47,8 @@ const STATUS_ACTOR_MAP = {
   'Shop Use': {
     'Pending': 'Reviewer',
     'Reviewer': 'Operations HOD',
-    'Operations HOD': 'Treasurer',
+    'Operations HOD': 'Finance HOD',
+    'Finance HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
     'Change Returned/Pending': 'Treasurer',

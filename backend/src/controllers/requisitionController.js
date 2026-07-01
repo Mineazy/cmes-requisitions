@@ -316,8 +316,8 @@ async function queueDisbursement(req, res) {
 
     const requisition = result.rows[0];
 
-    if (requisition.status !== 'Director' && requisition.status !== 'Operations HOD') {
-      return res.status(400).json({ error: 'Requisition must be at Director or Operations HOD stage' });
+    if (requisition.status !== 'Director' && requisition.status !== 'Finance HOD' && requisition.status !== 'Operations HOD') {
+      return res.status(400).json({ error: 'Requisition must be at Director, Finance HOD, or Operations HOD stage' });
     }
 
     await query(`UPDATE requisitions SET status = 'Pending Disbursement', updated_at = NOW() WHERE id = ?`, [requisition.id]);

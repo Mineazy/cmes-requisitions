@@ -4,7 +4,7 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
 
 const STATUS_FLOW = {
   'Admin': ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Shop Use': ['Pending','Reviewer','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Shop Use': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Returns Requisition': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
@@ -23,7 +23,8 @@ const STATUS_ACTOR_MAP = {
   'Shop Use': {
     'Pending': 'Reviewer',
     'Reviewer': 'Operations HOD',
-    'Operations HOD': 'Treasurer',
+    'Operations HOD': 'Finance HOD',
+    'Finance HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
     'Change Returned/Pending': 'Treasurer',
@@ -50,7 +51,7 @@ function getNextActorRole(status, type) {
 function statusDisplayName(status) {
   const map = {
     'Pending': 'Pending (1st Review)',
-    'Reviewer': 'HOD Review',
+    'Reviewer': 'Supervisor Review',
     'Pending Disbursement': 'Treasurer Disbursement',
     'Change Returned/Pending': 'Receipts & Change Filing',
     'Change Cleared': 'Reconciled & Closed'
@@ -928,7 +929,7 @@ function renderModalActionsPanel(req, userOverride) {
   if (activeRequiredRole && activeRequiredRole === userRole) {
     showPanel = true;
     if (userRole === 'Treasurer') {
-      if (req.status === 'Director' || req.status === 'Operations HOD' || req.status === 'Pending Disbursement') tDisburseBlock.style.display = 'block';
+      if (req.status === 'Director' || req.status === 'Operations HOD' || req.status === 'Finance HOD' || req.status === 'Pending Disbursement') tDisburseBlock.style.display = 'block';
       else if (req.status === 'Change Returned/Pending') tClearBlock.style.display = 'block';
     } else if (userRole === 'Requestor') {
       if (req.status === 'Issued') reqReceiptsBlock.style.display = 'block';
@@ -941,7 +942,7 @@ function renderModalActionsPanel(req, userOverride) {
 
   const disburseBtn = tDisburseBlock ? tDisburseBlock.querySelector('.btn-approve') : null;
   if (disburseBtn) {
-    if (req.status === 'Director' || req.status === 'Operations HOD') {
+    if (req.status === 'Director' || req.status === 'Operations HOD' || req.status === 'Finance HOD') {
       disburseBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Queue & Process for Disbursement`;
       disburseBtn.onclick = processTreasurerQueue;
     } else if (req.status === 'Pending Disbursement') {
