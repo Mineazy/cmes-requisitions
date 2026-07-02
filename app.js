@@ -59,6 +59,13 @@ function statusDisplayName(status) {
   return map[status] || status;
 }
 
+function nextActionLabel(req) {
+  if (req.status === 'Rejected') return 'Rejected';
+  if (req.status === 'Change Cleared') return 'Reconciled & Closed';
+  const nextRole = getNextActorRole(req.status, req.type);
+  return nextRole ? `Awaiting ${nextRole}` : statusDisplayName(req.status);
+}
+
 const DEFAULT_CATEGORIES = ['Heavy Equipment', 'Drills & Tools', 'Safety Wear (PPE)', 'Consumables', 'Office Admin'];
 
 function getCategories() {
@@ -417,7 +424,7 @@ function renderRequisitionCardHTML(req) {
     <div class="card-title">${req.title}</div>
     <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${itemsText} ${attachIcon ? '&nbsp;' + attachIcon + ' ' + req.attachment_count + ' file(s)' : ''}</p></div>
     <div><div class="card-details"><span>By: ${req.requestor_name}</span><span>${req.created_at ? req.created_at.split('T')[0] : ''}</span></div>
-    <div class="card-amount-block"><span class="status-badge ${statusClass}">${statusDisplayName(req.status)}</span>
+    <div class="card-amount-block"><span class="status-badge ${statusClass}">${nextActionLabel(req)}</span>
     <span class="card-amount">${displayAmt}</span></div></div></div>`;
 }
 
@@ -1364,7 +1371,7 @@ function renderAdminRequisitions(requisitions) {
         <p>${escHtml(r.requestor_name)} &middot; ${r.type} &middot; ${r.currency === 'ZMW' ? 'K' : '$'}${parseFloat(r.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <span class="status-badge ${badge}">${statusDisplayName(r.status)}</span>
+        <span class="status-badge ${badge}">${nextActionLabel(r)}</span>
         <button class="action-btn-sm" onclick="window.openDetails('${r.req_id}')">View</button>
       </div>
     </div>`;
