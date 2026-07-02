@@ -565,10 +565,74 @@ async function verifyQR(req, res) {
   }
 }
 
+async function edit(req, res) {
+  try {
+    const parsedItems = typeof req.body.items === 'string' ? JSON.parse(req.body.items) : req.body.items;
+    const { type, title, department, currency } = req.body;
+    const reqId = req.params.id;
+
+    if (!title || !type || !department || !currency || !parsedItems || parsedItems.length === 0) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const result = await query(
+      `SELECT r.* FROM requisitions r WHERE r.req_id = ?`,
+      [reqId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Requisition not found' });
+    }
+
+    const requisition = result.rows[0];
+
+    if (requisition.requestor_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the requestor can edit this requisition' });
+    }
+
+    if (requisition.status !== 'Pending') {
+      return res.status(400).json({ error: 'Can only edit requisitions in Pending status' });
+    }
+
+    const totalAmount = parsedItems.reduce((sum, it) => sum + (it.quantity * it.unitPrice), 0);
+
+    await transaction(async (client) => {
+      await client.query(
+        `UPDATE requisitions SET type = ?, title = ?, department = ?, currency = ?, total_amount = ?, updated_at = NOW() WHERE id = ?`,
+        [type, title, department, currency, totalAmount, requisition.id]
+      );
+
+      await client.query('DELETE FROM items WHERE requisition_id = ?', [requisition.id]);
+
+      for (const it of parsedItems) {
+        await client.query(
+          `INSERT INTO items (requisition_id, description, category, quantity, unit_price, total_price)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [requisition.id, it.description, it.category, it.quantity, it.unitPrice, it.quantity * it.unitPrice]
+        );
+      }
+    });
+
+    await emailService.notifyNextApprover({ ...requisition, type, title, department, currency, status: 'Pending' }).catch(() => {});
+
+    res.json({ message: `Requisition ${reqId} updated successfully`, status: 'Pending' });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'EDIT_REQUISITION', entityType: 'requisition', entityId: reqId,
+      details: `Edited ${type} requisition "${title}" (${currency} ${totalAmount})`
+    });
+  } catch (err) {
+    console.error('Edit requisition error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 module.exports = {
   list,
   getById,
   create,
+  edit,
   processApproval,
   queueDisbursement,
   disburse,

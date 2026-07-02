@@ -643,6 +643,8 @@ function clearForm() {
   document.getElementById('items-rows-container').innerHTML = '';
   document.getElementById('file-list').innerHTML = '';
   attachedFiles = [];
+  state._editReq = null;
+  state._resubmitReq = null;
   addFormItemRow();
   calculateFormTotal();
 }
@@ -775,6 +777,7 @@ async function handleFormSubmit(e) {
     return;
   }
 
+  const isEdit = !!state._editReq;
   const isResubmit = !!state._resubmitReq;
   const items = [];
   let totalAmount = 0;
@@ -789,40 +792,59 @@ async function handleFormSubmit(e) {
   });
 
   try {
-    const formData = new FormData();
-    formData.append('type', document.getElementById('req-type').value);
-    formData.append('title', document.getElementById('req-title').value);
-    formData.append('department', document.getElementById('req-department').value);
-    formData.append('currency', document.getElementById('req-currency').value);
-    formData.append('items', JSON.stringify(items));
+    if (isEdit) {
+      const data = await apiFetch('PUT', `/requisitions/${state._editReq.req_id}`, {
+        type: document.getElementById('req-type').value,
+        title: document.getElementById('req-title').value,
+        department: document.getElementById('req-department').value,
+        currency: document.getElementById('req-currency').value,
+        items
+      });
 
-    for (const file of attachedFiles) {
-      formData.append('attachments', file);
+      showToastNotification(data.message || 'Requisition updated successfully!');
+      state._editReq = null;
+      document.getElementById('new-req-form').reset();
+      document.getElementById('items-rows-container').innerHTML = '';
+      addFormItemRow();
+      calculateFormTotal();
+      await loadInitialData();
+      switchView('requisition-queue');
+    } else {
+      const formData = new FormData();
+      formData.append('type', document.getElementById('req-type').value);
+      formData.append('title', document.getElementById('req-title').value);
+      formData.append('department', document.getElementById('req-department').value);
+      formData.append('currency', document.getElementById('req-currency').value);
+      formData.append('items', JSON.stringify(items));
+
+      for (const file of attachedFiles) {
+        formData.append('attachments', file);
+      }
+
+      const opts = {
+        method: 'POST',
+        headers: {}
+      };
+      if (state.token) opts.headers['Authorization'] = `Bearer ${state.token}`;
+      opts.body = formData;
+
+      const res = await fetch(`${API_BASE}/requisitions`, opts);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+
+      showToastNotification(data.message || 'Requisition submitted successfully!');
+      document.getElementById('new-req-form').reset();
+      document.getElementById('items-rows-container').innerHTML = '';
+      document.getElementById('file-list').innerHTML = '';
+      attachedFiles = [];
+      addFormItemRow();
+      calculateFormTotal();
+      state._resubmitReq = null;
+      await loadInitialData();
+      switchView('requisition-queue');
     }
-
-    const opts = {
-      method: 'POST',
-      headers: {}
-    };
-    if (state.token) opts.headers['Authorization'] = `Bearer ${state.token}`;
-    opts.body = formData;
-
-    const res = await fetch(`${API_BASE}/requisitions`, opts);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-
-    showToastNotification(data.message || 'Requisition submitted successfully!');
-    document.getElementById('new-req-form').reset();
-    document.getElementById('items-rows-container').innerHTML = '';
-    document.getElementById('file-list').innerHTML = '';
-    attachedFiles = [];
-    addFormItemRow();
-    calculateFormTotal();
-    state._resubmitReq = null;
-    await loadInitialData();
-    switchView('requisition-queue');
   } catch (err) {
-    alert('Failed to create requisition: ' + err.message);
+    alert(`Failed to ${isEdit ? 'update' : 'create'} requisition: ` + err.message);
   }
 }
 
@@ -856,6 +878,9 @@ async function openDetails(reqId) {
     const isApproved = currentIdx >= disburseIdx;
     const downloadBtn = document.getElementById('detail-download-pdf-btn');
     downloadBtn.style.display = isApproved ? 'flex' : 'none';
+    const editBtn = document.getElementById('detail-edit-btn');
+    const canEdit = req.status === 'Pending' && state.currentUser && state.currentUser.id === req.requestor_id;
+    editBtn.style.display = canEdit ? 'flex' : 'none';
 
     const tbody = document.getElementById('detail-items-tbody');
     const symbol = req.currency === 'ZMW' ? 'K' : '$';
@@ -912,6 +937,54 @@ function closeDetailsModal() {
   renderDashboard();
   renderQueue();
 }
+
+window.editRequisition = function() {
+  const req = state.selectedRequisition;
+  if (!req) return;
+
+  state._editReq = req;
+
+  document.getElementById('req-title').value = req.title;
+  document.getElementById('req-type').value = req.type;
+  document.getElementById('req-department').value = req.department || '';
+  document.getElementById('req-currency').value = req.currency;
+
+  const container = document.getElementById('items-rows-container');
+  container.innerHTML = '';
+  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+
+  (req.items || []).forEach(it => {
+    const rowId = `item_row_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+    container.insertAdjacentHTML('beforeend', `<div class="item-row" id="${rowId}">
+      <div class="form-group"><div class="item-row-header">Description</div>
+        <input type="text" class="item-desc" required value="${escHtml(it.description || '')}"></div>
+      <div class="form-group"><div class="item-row-header">Category</div>
+        <select class="item-cat" required>
+          ${renderCategoryOptions(it.category || '')}
+        </select></div>
+      <div class="form-group"><div class="item-row-header">Qty</div>
+        <input type="number" class="item-qty" min="1" value="${it.quantity || 1}" required oninput="window.calculateRowSubtotal('${rowId}')"></div>
+      <div class="form-group"><div class="item-row-header">Unit Price</div>
+        <div style="display:flex;align-items:center;position:relative;">
+          <span class="item-currency-hint" style="position:absolute;left:10px;font-size:0.8rem;color:var(--text-secondary);">${symbol}</span>
+          <input type="number" class="item-price" min="0.01" step="0.01" value="${it.unit_price || it.unitPrice || 0}" required style="padding-left:24px;" oninput="window.calculateRowSubtotal('${rowId}')"></div></div>
+      <div class="form-group"><div class="item-row-header">Subtotal</div>
+        <input type="text" class="item-subtotal" value="${symbol}${((it.quantity||0)*(it.unit_price||it.unitPrice||0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}" disabled style="background-color:transparent;border:none;font-weight:700;width:90px;"></div>
+      <button type="button" class="btn-icon-danger" onclick="window.removeFormItemRow('${rowId}')" title="Delete Row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      </button></div>`);
+  });
+
+  document.getElementById('file-list').innerHTML = '';
+  attachedFiles = [];
+
+  calculateFormTotal();
+  closeDetailsModal();
+  document.querySelector('#view-create-requisition .view-title-block p').textContent = `Editing: ${req.req_id} — modify the details below and save.`;
+  showToastNotification(`Editing ${req.req_id} — modify and save when ready`);
+  switchView('create-requisition');
+  renderApprovalFlow();
+};
 
 function renderModalActionsPanel(req, userOverride) {
   const user = userOverride || state.currentUser;
