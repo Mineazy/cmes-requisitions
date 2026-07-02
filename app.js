@@ -3,7 +3,7 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   : '/api';
 
 const STATUS_FLOW = {
-  'Admin': ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Admin': ['Pending','Reviewer','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Shop Use': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Returns Requisition': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
@@ -11,8 +11,7 @@ const STATUS_FLOW = {
 const STATUS_ACTOR_MAP = {
   'Admin': {
     'Pending': 'Reviewer',
-    'Reviewer': 'Purchasing HOD',
-    'Purchasing HOD': 'Finance HOD',
+    'Reviewer': 'Finance HOD',
     'Finance HOD': 'Director',
     'Director': 'Treasurer',
     'Pending Disbursement': 'Treasurer',

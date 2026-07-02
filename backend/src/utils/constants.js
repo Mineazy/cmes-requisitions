@@ -2,7 +2,6 @@ const STATUS_FLOW = {
   'Admin': [
     'Pending',
     'Reviewer',
-    'Purchasing HOD',
     'Finance HOD',
     'Director',
     'Pending Disbursement',
@@ -35,8 +34,7 @@ const STATUS_FLOW = {
 const STATUS_ACTOR_MAP = {
   'Admin': {
     'Pending': 'Reviewer',
-    'Reviewer': 'Purchasing HOD',
-    'Purchasing HOD': 'Finance HOD',
+    'Reviewer': 'Finance HOD',
     'Finance HOD': 'Director',
     'Director': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
