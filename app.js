@@ -876,10 +876,11 @@ async function openDetails(reqId) {
     const disburseIdx = flow.indexOf('Pending Disbursement');
     const currentIdx = flow.indexOf(req.status);
     const isApproved = currentIdx >= disburseIdx;
+    const isRejected = req.status === 'Rejected';
     const downloadBtn = document.getElementById('detail-download-pdf-btn');
     downloadBtn.style.display = isApproved ? 'flex' : 'none';
     const editBtn = document.getElementById('detail-edit-btn');
-    const canEdit = req.status === 'Pending' && state.currentUser && state.currentUser.id === req.requestor_id;
+    const canEdit = !isRejected && currentIdx < disburseIdx - 1 && state.currentUser && state.currentUser.id === req.requestor_id;
     editBtn.style.display = canEdit ? 'flex' : 'none';
 
     const tbody = document.getElementById('detail-items-tbody');
@@ -924,6 +925,7 @@ async function openDetails(reqId) {
     renderModalActionsPanel(req, profileData ? profileData.user : null);
     renderStepper(req);
     renderSignatures(req);
+    renderEditHistory(req);
     document.getElementById('requisition-details-modal').classList.add('active');
   } catch (err) {
     showToastNotification('Failed to load details: ' + err.message);
@@ -1111,6 +1113,38 @@ function renderSignatures(req) {
       <div class="signature-stamp-qr" id="${cardId}"></div>
       <div class="signature-stamp-details"><span class="sig-name">${st.user_name}</span><span class="sig-role">${st.user_role}</span>
       <span class="sig-time">${st.timestamp ? st.timestamp.split('.')[0].replace('T', ' ') : ''}</span></div></div>`;
+  }).join('');
+}
+
+function renderEditHistory(req) {
+  const section = document.getElementById('detail-edit-history-section');
+  const container = document.getElementById('detail-edit-history');
+  const edits = (req.history || []).filter(h => h.action === 'Edited');
+  if (edits.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  container.innerHTML = edits.map(ed => {
+    let changes = {};
+    try { changes = JSON.parse(ed.reason || '{}'); } catch (e) {}
+    const changeLines = Object.entries(changes).map(([field, val]) => {
+      const label = field.charAt(0).toUpperCase() + field.slice(1);
+      if (field === 'items') {
+        const oldList = (val.old || []).join(', ');
+        const newList = (val.new || []).join(', ');
+        return `<div style="margin-top:6px;"><span style="color:var(--copper-light);font-weight:600;">${label}:</span><div style="margin-left:8px;font-size:0.78rem;"><span style="color:#ef4444;text-decoration:line-through;">${escHtml(oldList)}</span><br><span style="color:#22c55e;">${escHtml(newList)}</span></div></div>`;
+      }
+      return `<div style="margin-top:6px;"><span style="color:var(--copper-light);font-weight:600;">${label}:</span> <span style="color:#ef4444;text-decoration:line-through;">${escHtml(val.old)}</span> → <span style="color:#22c55e;">${escHtml(val.new)}</span></div>`;
+    }).join('');
+    const time = ed.timestamp ? ed.timestamp.split('.')[0].replace('T', ' ') : '';
+    return `<div style="border-bottom:1px solid var(--border-color);padding:10px 0;font-size:0.82rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;">${escHtml(ed.user_name || 'Unknown')}</span>
+        <span style="color:var(--text-muted);font-size:0.75rem;">${time}</span>
+      </div>
+      ${changeLines}
+    </div>`;
   }).join('');
 }
 

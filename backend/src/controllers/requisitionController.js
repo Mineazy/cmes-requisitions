@@ -590,8 +590,33 @@ async function edit(req, res) {
       return res.status(403).json({ error: 'Only the requestor can edit this requisition' });
     }
 
-    if (requisition.status !== 'Pending') {
-      return res.status(400).json({ error: 'Can only edit requisitions in Pending status' });
+    const flow = STATUS_FLOW[requisition.type];
+    if (!flow) {
+      return res.status(400).json({ error: 'Invalid requisition type' });
+    }
+    const disburseIdx = flow.indexOf('Pending Disbursement');
+    const currentIdx = flow.indexOf(requisition.status);
+    if (currentIdx < 0 || currentIdx >= disburseIdx - 1) {
+      return res.status(400).json({ error: 'Requisition can only be edited before the final approval stage' });
+    }
+
+    const oldItemsResult = await query('SELECT * FROM items WHERE requisition_id = ?', [requisition.id]);
+    const oldItems = oldItemsResult.rows;
+
+    const changes = {};
+    if (type !== requisition.type) changes.type = { old: requisition.type, new: type };
+    if (title !== requisition.title) changes.title = { old: requisition.title, new: title };
+    if (department !== requisition.department) changes.department = { old: requisition.department, new: department };
+    if (currency !== requisition.currency) changes.currency = { old: requisition.currency, new: currency };
+
+    const oldItemSummaries = oldItems.map(it => `${it.description} (x${it.quantity})`);
+    const newItemSummaries = parsedItems.map(it => `${it.description} (x${it.quantity})`);
+    if (JSON.stringify(oldItemSummaries) !== JSON.stringify(newItemSummaries)) {
+      changes.items = { old: oldItemSummaries, new: newItemSummaries };
+    }
+
+    if (Object.keys(changes).length === 0) {
+      return res.json({ message: 'No changes detected', status: requisition.status });
     }
 
     const totalAmount = parsedItems.reduce((sum, it) => sum + (it.quantity * it.unitPrice), 0);
@@ -611,11 +636,15 @@ async function edit(req, res) {
           [requisition.id, it.description, it.category, it.quantity, it.unitPrice, it.quantity * it.unitPrice]
         );
       }
+
+      await client.query(
+        `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
+         VALUES (?, ?, 'Edited', ?, ?, NOW())`,
+        [requisition.id, requisition.status, req.user.id, JSON.stringify(changes)]
+      );
     });
 
-    await emailService.notifyNextApprover({ ...requisition, type, title, department, currency, status: 'Pending' }).catch(() => {});
-
-    res.json({ message: `Requisition ${reqId} updated successfully`, status: 'Pending' });
+    res.json({ message: `Requisition ${reqId} updated successfully`, status: requisition.status });
 
     logAudit({
       userId: req.user.id, userName: req.user.name, userRole: req.user.role,
