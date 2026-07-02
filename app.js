@@ -5,7 +5,8 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
 const STATUS_FLOW = {
   'Admin': ['Pending','Reviewer','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
   'Shop Use': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Returns Requisition': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
+  'Returns Requisition': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Purchasing': ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
 const STATUS_ACTOR_MAP = {
@@ -34,6 +35,17 @@ const STATUS_ACTOR_MAP = {
     'Reviewer': 'Operations HOD',
     'Operations HOD': 'Finance HOD',
     'Finance HOD': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  },
+  'Purchasing': {
+    'Pending': 'Reviewer',
+    'Reviewer': 'Purchasing HOD',
+    'Purchasing HOD': 'Finance HOD',
+    'Finance HOD': 'Director',
+    'Director': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
     'Change Returned/Pending': 'Treasurer',
@@ -419,7 +431,7 @@ function renderRequisitionCardHTML(req) {
     : '';
 
   return `<div class="requisition-card" onclick="window.openDetails('${req.req_id}')">
-    <div><div class="card-top"><span class="req-id">${req.req_id}</span><span class="req-type-badge ${req.type.toLowerCase() === 'admin' ? 'admin' : 'shop'}">${req.type}</span></div>
+    <div><div class="card-top"><span class="req-id">${req.req_id}</span><span class="req-type-badge ${req.type.toLowerCase() === 'admin' ? 'admin' : req.type.toLowerCase() === 'purchasing' ? 'purchasing' : 'shop'}">${req.type}</span></div>
     <div class="card-title">${req.title}</div>
     <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${itemsText} ${attachIcon ? '&nbsp;' + attachIcon + ' ' + req.attachment_count + ' file(s)' : ''}</p></div>
     <div><div class="card-details"><span>By: ${req.requestor_name}</span><span>${req.created_at ? req.created_at.split('T')[0] : ''}</span></div>
@@ -832,7 +844,7 @@ async function openDetails(reqId) {
     document.getElementById('detail-req-title').textContent = req.title;
     const typeBadge = document.getElementById('detail-req-type');
     typeBadge.textContent = req.type;
-    typeBadge.className = `req-type-badge ${req.type.toLowerCase() === 'admin' ? 'admin' : 'shop'}`;
+    typeBadge.className = `req-type-badge ${req.type.toLowerCase() === 'admin' ? 'admin' : req.type.toLowerCase() === 'purchasing' ? 'purchasing' : 'shop'}`;
     document.getElementById('detail-requestor').textContent = req.requestor_name;
     document.getElementById('detail-dept').textContent = req.department;
     document.getElementById('detail-date').textContent = req.created_at ? req.created_at.split('T')[0] : '';

@@ -658,6 +658,12 @@ main {
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+.req-type-badge.purchasing {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
 .card-title {
   font-family: var(--font-headings);
   font-size: 1.1rem;

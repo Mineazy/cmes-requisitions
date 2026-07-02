@@ -28,6 +28,17 @@ const STATUS_FLOW = {
     'Issued',
     'Change Returned/Pending',
     'Change Cleared'
+  ],
+  'Purchasing': [
+    'Pending',
+    'Reviewer',
+    'Purchasing HOD',
+    'Finance HOD',
+    'Director',
+    'Pending Disbursement',
+    'Issued',
+    'Change Returned/Pending',
+    'Change Cleared'
   ]
 };
 
@@ -57,6 +68,17 @@ const STATUS_ACTOR_MAP = {
     'Reviewer': 'Operations HOD',
     'Operations HOD': 'Finance HOD',
     'Finance HOD': 'Treasurer',
+    'Pending Disbursement': 'Treasurer',
+    'Issued': 'Requestor',
+    'Change Returned/Pending': 'Treasurer',
+    'Change Cleared': 'Treasurer'
+  },
+  'Purchasing': {
+    'Pending': 'Reviewer',
+    'Reviewer': 'Purchasing HOD',
+    'Purchasing HOD': 'Finance HOD',
+    'Finance HOD': 'Director',
+    'Director': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
     'Issued': 'Requestor',
     'Change Returned/Pending': 'Treasurer',
