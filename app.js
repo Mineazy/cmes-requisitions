@@ -1027,6 +1027,7 @@ function renderModalActionsPanel(req, userOverride) {
   const tClearBlock = document.getElementById('treasurer-clearance-block');
   const reqReceiptsBlock = document.getElementById('requestor-receipts-block');
   const reqResubmitBlock = document.getElementById('requestor-resubmit-block');
+  const adminBlock = document.getElementById('admin-actions-block');
 
   actionsPanel.style.display = 'none';
   appBlock.style.display = 'none';
@@ -1034,6 +1035,7 @@ function renderModalActionsPanel(req, userOverride) {
   tClearBlock.style.display = 'none';
   reqReceiptsBlock.style.display = 'none';
   reqResubmitBlock.style.display = 'none';
+  adminBlock.style.display = 'none';
 
   if (req.status === 'Rejected') {
     if (user && req.requestor_id === user.id) {
@@ -1063,6 +1065,11 @@ function renderModalActionsPanel(req, userOverride) {
     }
   }
   if (showPanel) actionsPanel.style.display = 'block';
+
+  if (userRole === 'Admin') {
+    actionsPanel.style.display = 'block';
+    adminBlock.style.display = 'block';
+  }
 
   const disburseBtn = tDisburseBlock ? tDisburseBlock.querySelector('.btn-approve') : null;
   if (disburseBtn) {
@@ -1309,6 +1316,20 @@ async function processTreasurerClear() {
     renderQueue();
   } catch (err) { alert('Failed: ' + err.message); }
 }
+
+window.restartApprovalFlow = async function() {
+  const req = state.selectedRequisition;
+  if (!req) return;
+  if (!confirm(`Are you sure you want to restart the approval flow for ${req.req_id}? This will reset the status to Pending and clear all approval history.`)) return;
+  try {
+    const data = await apiFetch('POST', `/requisitions/${req.req_id}/restart-approval`);
+    showToastNotification(data.message || 'Approval flow restarted.');
+    closeDetailsModal();
+    await loadInitialData();
+    renderDashboard();
+    renderQueue();
+  } catch (err) { alert('Failed: ' + err.message); }
+};
 
 // --- Email Drawer ---
 function toggleEmailDrawer() {
