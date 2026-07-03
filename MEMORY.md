@@ -178,3 +178,51 @@
 - Updated backend `verifyQRCode()` to destructure `publicKeyPem` separately from payload so it doesn't pollute the verified payload.
 - All 9 crypto unit tests pass.
 - **Files:** `app.js`, `backend/src/services/cryptoService.js`
+
+## 18. Edit Requisition Before Final Approval
+- Added ability for requestor to edit a requisition after submission but before `Pending Disbursement` stage.
+- Edit window: `currentIdx < disburseIdx - 1` (edits blocked at the final approver stage).
+- **Backend:** New `PUT /:id` route + `edit()` controller with change detection, transaction-based update (delete+reinsert items), edit history stored as `approvals` row with `action='Edited'` + JSON `reason`.
+- **Frontend:** Edit button in modal header (pencil icon, visible when `canEdit` true), populates create form with existing data, `state._editReq` flag. Submit uses `PUT` with JSON payload.
+- Edit history rendered in modal right panel via `renderEditHistory()` — old/new field values with strikethrough/green formatting.
+- **Files:** `app.js`, `backend/src/controllers/requisitionController.js`, `backend/src/routes/requisitions.js`, `index.html`
+
+## 19. Purchasing Requisition Type
+- Added `Purchasing` as fourth requisition type: Supervisor → Purchasing HOD → Finance HOD → Director → Disburse.
+- Added `Supervisor` review step (renamed from `HOD Review`), `Finance HOD` role (renamed from `Accounts HOD`).
+- Updated all flow configs, role maps, CSS, test setup.
+- **Files:** `backend/src/utils/constants.js`, `backend/src/controllers/adminController.js`, `backend/tests/api.test.js`, `app.js`, `index.html`, `index.css`
+
+## 20. UI Polish — Badges & Labels
+- Card badges show next approval stage (`Awaiting {Role}`) instead of current status.
+- Stepper shows readable status labels instead of raw internal names.
+- Profile refreshed on details modal open so role changes take effect immediately.
+- Atomic approval transactions with optimistic state update + fire-and-forget email.
+- **Files:** `app.js`, `index.css`
+
+## 21. Fix Edit Form Not Populating (Current Session)
+- **Root cause:** `switchView('create-requisition')` called `clearForm()` when `!state._resubmitReq`, ignoring the edit state. This wiped all populated form fields after `editRequisition()` had filled them.
+- **Fix:** Added `!state._editReq` to the guard condition. Also cleaned up `_editReq` when navigating away from create view.
+- **Files:** `app.js`
+
+## 22. Email Notification on Edit
+- Added `notifyEdit()` to `emailService.js` — sends "UPDATED: Requisition X has been modified" to the next approver.
+- Wired into `edit()` controller with fire-and-forget pattern (`.catch()`), non-blocking.
+- **Files:** `backend/src/services/emailService.js`, `backend/src/controllers/requisitionController.js`
+
+## 23. Field-Level Change Detection for Items
+- Replaced summary-based item comparison (`description (xquantity)` string) with per-field comparison: description, category, quantity, and unit_price.
+- Item summaries in edit history now include category and price for richer display.
+- **Files:** `backend/src/controllers/requisitionController.js`
+
+## 24. Attachment Editing
+- Added `upload.array('attachments', 10)` middleware to `PUT /:id` route.
+- Backend `edit()` now saves uploaded files inside the transaction.
+- Frontend shows existing attachments (read-only) in the edit form file area, plus allows adding new files via the drop zone.
+- Edit submission uses `FormData` when files are present, falls back to JSON when no new files.
+- **Files:** `backend/src/routes/requisitions.js`, `backend/src/controllers/requisitionController.js`, `app.js`
+
+## 25. Readable Status Labels
+- Overhauled `statusDisplayName()` with complete mapping for all statuses: `Submitted`, `Supervisor Review`, `Purchasing Review`, `Finance Review`, `Director Approval`, `Operations Review`, `Awaiting Disbursement`, `Return Pending Clearance`, `Reconciled & Closed`.
+- Updated admin filter dropdown, stepper labels, card badges, and admin stats to use consistent display names.
+- **Files:** `app.js`, `index.html`

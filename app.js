@@ -61,11 +61,17 @@ function getNextActorRole(status, type) {
 
 function statusDisplayName(status) {
   const map = {
-    'Pending': 'Pending (1st Review)',
+    'Pending': 'Submitted',
     'Reviewer': 'Supervisor Review',
-    'Pending Disbursement': 'Treasurer Disbursement',
-    'Change Returned/Pending': 'Receipts & Change Filing',
-    'Change Cleared': 'Reconciled & Closed'
+    'Purchasing HOD': 'Purchasing Review',
+    'Finance HOD': 'Finance Review',
+    'Director': 'Director Approval',
+    'Operations HOD': 'Operations Review',
+    'Pending Disbursement': 'Awaiting Disbursement',
+    'Issued': 'Issued',
+    'Change Returned/Pending': 'Return Pending Clearance',
+    'Change Cleared': 'Reconciled & Closed',
+    'Rejected': 'Rejected'
   };
   return map[status] || status;
 }
@@ -309,6 +315,7 @@ function switchView(viewName) {
 
   if (viewName !== 'create-requisition') {
     state._resubmitReq = null;
+    state._editReq = null;
   }
 
   if (viewName === 'dashboard') {
@@ -324,7 +331,7 @@ function switchView(viewName) {
     } else {
       document.getElementById('create-req-blocked').style.display = 'none';
       document.getElementById('new-req-form').style.display = 'block';
-      if (!state._resubmitReq) {
+      if (!state._resubmitReq && !state._editReq) {
         clearForm();
         document.querySelector('#view-create-requisition .view-title-block p').textContent = 'Create purchases or shop expenses for copper, drills, tools, PPE, or administrative items.';
       }
@@ -793,18 +800,42 @@ async function handleFormSubmit(e) {
 
   try {
     if (isEdit) {
-      const data = await apiFetch('PUT', `/requisitions/${state._editReq.req_id}`, {
+      const payload = {
         type: document.getElementById('req-type').value,
         title: document.getElementById('req-title').value,
         department: document.getElementById('req-department').value,
         currency: document.getElementById('req-currency').value,
         items
-      });
+      };
+      const editReqId = state._editReq.req_id;
 
-      showToastNotification(data.message || 'Requisition updated successfully!');
+      if (attachedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append('type', payload.type);
+        formData.append('title', payload.title);
+        formData.append('department', payload.department);
+        formData.append('currency', payload.currency);
+        formData.append('items', JSON.stringify(items));
+        for (const file of attachedFiles) {
+          formData.append('attachments', file);
+        }
+        const opts = { method: 'PUT', headers: {} };
+        if (state.token) opts.headers['Authorization'] = `Bearer ${state.token}`;
+        opts.body = formData;
+        const res = await fetch(`${API_BASE}/requisitions/${editReqId}`, opts);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+        showToastNotification(data.message || 'Requisition updated successfully!');
+      } else {
+        const data = await apiFetch('PUT', `/requisitions/${editReqId}`, payload);
+        showToastNotification(data.message || 'Requisition updated successfully!');
+      }
+
       state._editReq = null;
       document.getElementById('new-req-form').reset();
       document.getElementById('items-rows-container').innerHTML = '';
+      document.getElementById('file-list').innerHTML = '';
+      attachedFiles = [];
       addFormItemRow();
       calculateFormTotal();
       await loadInitialData();
@@ -1080,7 +1111,7 @@ function renderStepper(req) {
         statusText = nextRole ? `Awaiting ${nextRole}` : 'Awaiting action';
       }
     }
-    const label = stage === 'Pending' ? 'Created (Pending)' : statusDisplayName(stage);
+    const label = statusDisplayName(stage);
     stepperHtml += `<li class="${statusClass}"><span class="stepper-label">${label}</span><span class="stepper-time">${statusText}</span></li>`;
   });
   stepperEl.innerHTML = stepperHtml;

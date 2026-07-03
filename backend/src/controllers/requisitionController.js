@@ -609,10 +609,15 @@ async function edit(req, res) {
     if (department !== requisition.department) changes.department = { old: requisition.department, new: department };
     if (currency !== requisition.currency) changes.currency = { old: requisition.currency, new: currency };
 
-    const oldItemSummaries = oldItems.map(it => `${it.description} (x${it.quantity})`);
-    const newItemSummaries = parsedItems.map(it => `${it.description} (x${it.quantity})`);
-    if (JSON.stringify(oldItemSummaries) !== JSON.stringify(newItemSummaries)) {
-      changes.items = { old: oldItemSummaries, new: newItemSummaries };
+    const itemsChanged = oldItems.length !== parsedItems.length || oldItems.some((it, i) => {
+      const ni = parsedItems[i];
+      return !ni || it.description !== ni.description || it.category !== (ni.category || '') || it.quantity !== ni.quantity || parseFloat(it.unit_price) !== parseFloat(ni.unitPrice);
+    });
+    if (itemsChanged) {
+      changes.items = {
+        old: oldItems.map(it => `${it.description} (${it.category}, x${it.quantity} @ ${it.unit_price})`),
+        new: parsedItems.map(it => `${it.description} (${it.category || ''}, x${it.quantity} @ ${it.unitPrice})`)
+      };
     }
 
     if (Object.keys(changes).length === 0) {
@@ -637,6 +642,15 @@ async function edit(req, res) {
         );
       }
 
+      const files = req.files || [];
+      for (const f of files) {
+        await client.query(
+          `INSERT INTO attachments (requisition_id, file_name, original_name, mime_type, file_size)
+           VALUES (?, ?, ?, ?, ?)`,
+          [requisition.id, f.filename, f.originalname, f.mimetype, f.size]
+        );
+      }
+
       await client.query(
         `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
          VALUES (?, ?, 'Edited', ?, ?, NOW())`,
@@ -651,6 +665,17 @@ async function edit(req, res) {
       action: 'EDIT_REQUISITION', entityType: 'requisition', entityId: reqId,
       details: `Edited ${type} requisition "${title}" (${currency} ${totalAmount})`
     });
+
+    query(
+      `SELECT r.*, u.name as requestor_name FROM requisitions r JOIN users u ON r.requestor_id = u.id WHERE r.req_id = ?`,
+      [reqId]
+    ).then(result => {
+      if (result.rows.length > 0) {
+        emailService.notifyEdit(result.rows[0]).catch(err => {
+          console.error('Edit notification failed (non-blocking):', err.message);
+        });
+      }
+    }).catch(() => {});
   } catch (err) {
     console.error('Edit requisition error:', err);
     res.status(500).json({ error: 'Internal server error' });

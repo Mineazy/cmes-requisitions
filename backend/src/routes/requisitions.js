@@ -19,8 +19,8 @@ router.get('/:id', requisitionController.getById);
 // Create new requisition (with optional file attachments)
 router.post('/', requireRole('Requestor'), upload.array('attachments', 10), requisitionController.create);
 
-// Edit requisition (Pending status only, Requestor only)
-router.put('/:id', requireRole('Requestor'), requisitionController.edit);
+// Edit requisition (before final approval, Requestor only)
+router.put('/:id', requireRole('Requestor'), upload.array('attachments', 10), requisitionController.edit);
 
 // Process approval/rejection
 router.post('/:id/approve', requisitionController.processApproval);

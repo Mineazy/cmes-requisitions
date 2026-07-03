@@ -133,9 +133,36 @@ async function notifyClearanceRequired(req) {
   return email;
 }
 
+async function notifyEdit(req) {
+  const { getNextActorRole } = require('../utils/constants');
+
+  const nextActorRole = getNextActorRole(req.status, req.type);
+  if (!nextActorRole) return null;
+
+  const userResult = await query('SELECT * FROM users WHERE role = ? LIMIT 1', [nextActorRole]);
+  if (userResult.rows.length === 0) return null;
+
+  const recipient = userResult.rows[0];
+  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const formattedAmount = `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+  const email = await createEmail({
+    from: FROM_EMAIL,
+    to: recipient.email,
+    recipientName: recipient.name,
+    subject: `UPDATED: Requisition ${req.req_id} has been modified — awaiting your review`,
+    body: `Dear ${recipient.name},\n\nRequisition ${req.req_id} ("${req.title}") has been edited by the requestor and is awaiting your action.\n\nDetails:\n- Requester: ${req.requestor_name || 'N/A'}\n- Current Status: ${req.status}\n- Total Value: ${formattedAmount}\n\nPlease log in to the EazyTools Zambia Requisitions Desk to review the updated details.`,
+    reqId: req.req_id,
+    targetRole: nextActorRole
+  });
+
+  return email;
+}
+
 module.exports = {
   createEmail,
   notifyNextApprover,
+  notifyEdit,
   notifyRejection,
   notifyDisbursement,
   notifyClearanceRequired
