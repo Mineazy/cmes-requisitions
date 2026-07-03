@@ -682,11 +682,58 @@ async function edit(req, res) {
   }
 }
 
+async function restartApproval(req, res) {
+  try {
+    const reqId = req.params.id;
+
+    const result = await query(
+      `SELECT r.*, u.name as requestor_name
+       FROM requisitions r
+       JOIN users u ON r.requestor_id = u.id
+       WHERE r.req_id = ?`,
+      [reqId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Requisition not found' });
+    }
+
+    const requisition = result.rows[0];
+
+    await transaction(async (client) => {
+      await client.query('DELETE FROM approvals WHERE requisition_id = ?', [requisition.id]);
+
+      await client.query(
+        `UPDATE requisitions SET status = 'Pending', rejection_reason = NULL, updated_at = NOW() WHERE id = ?`,
+        [requisition.id]
+      );
+
+      await client.query(
+        `INSERT INTO approvals (requisition_id, stage, action, user_id, timestamp)
+         VALUES (?, 'Pending', 'Approval Flow Restarted', ?, NOW())`,
+        [requisition.id, req.user.id]
+      );
+    });
+
+    res.json({ message: `Approval flow restarted for ${reqId}. Status reset to Pending.` });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'RESTART_APPROVAL', entityType: 'requisition', entityId: reqId,
+      details: `Approval flow restarted for "${requisition.title}" (${requisition.type})`
+    });
+  } catch (err) {
+    console.error('Restart approval error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 module.exports = {
   list,
   getById,
   create,
   edit,
+  restartApproval,
   processApproval,
   queueDisbursement,
   disburse,

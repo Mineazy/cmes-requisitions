@@ -22,6 +22,9 @@ router.post('/', requireRole('Requestor'), upload.array('attachments', 10), requ
 // Edit requisition (before final approval, Requestor only)
 router.put('/:id', requireRole('Requestor'), upload.array('attachments', 10), requisitionController.edit);
 
+// Admin: Restart approval flow (reset to Pending, clear history)
+router.post('/:id/restart-approval', requireRole('Admin'), requisitionController.restartApproval);
+
 // Process approval/rejection
 router.post('/:id/approve', requisitionController.processApproval);
 
