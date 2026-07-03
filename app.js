@@ -1037,6 +1037,13 @@ function renderModalActionsPanel(req, userOverride) {
   reqResubmitBlock.style.display = 'none';
   adminBlock.style.display = 'none';
 
+  const userRole = user ? user.role : '';
+
+  if (userRole === 'Admin') {
+    actionsPanel.style.display = 'block';
+    adminBlock.style.display = 'block';
+  }
+
   if (req.status === 'Rejected') {
     if (user && req.requestor_id === user.id) {
       actionsPanel.style.display = 'block';
@@ -1048,7 +1055,6 @@ function renderModalActionsPanel(req, userOverride) {
 
   if (req.status === 'Change Cleared') return;
 
-  const userRole = user ? user.role : '';
   const activeRequiredRole = getNextActorRole(req.status, req.type);
   let showPanel = false;
 
@@ -1065,11 +1071,6 @@ function renderModalActionsPanel(req, userOverride) {
     }
   }
   if (showPanel) actionsPanel.style.display = 'block';
-
-  if (userRole === 'Admin') {
-    actionsPanel.style.display = 'block';
-    adminBlock.style.display = 'block';
-  }
 
   const disburseBtn = tDisburseBlock ? tDisburseBlock.querySelector('.btn-approve') : null;
   if (disburseBtn) {
