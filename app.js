@@ -779,13 +779,14 @@ window.resubmitRequisition = function() {
 
 async function handleFormSubmit(e) {
   e.preventDefault();
-  if (!state.currentUser || state.currentUser.role !== 'Requestor') {
+  const isEdit = !!state._editReq;
+  const isResubmit = !!state._resubmitReq;
+
+  if (!isEdit && (!state.currentUser || state.currentUser.role !== 'Requestor')) {
     alert('Only users with the Requestor role can initiate new requisitions.');
     return;
   }
 
-  const isEdit = !!state._editReq;
-  const isResubmit = !!state._resubmitReq;
   const items = [];
   let totalAmount = 0;
   document.querySelectorAll('.item-row').forEach(row => {
