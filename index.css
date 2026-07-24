@@ -1074,7 +1074,6 @@ main {
   line-height: 1;
 }
 .approval-avatar[data-role="Requestor"]    { background: var(--copper-dark); }
-.approval-avatar[data-role="Reviewer"]     { background: #6b21a8; }
 .approval-avatar[data-role="Purchasing HOD"] { background: #1a73e8; }
 .approval-avatar[data-role="Finance HOD"]   { background: #7b1fa2; }
 .approval-avatar[data-role="Director"]       { background: #e65100; }

@@ -3,16 +3,15 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   : '/api';
 
 const STATUS_FLOW = {
-  'Admin': ['Pending','Reviewer','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Shop Use': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Returns Requisition': ['Pending','Reviewer','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
-  'Purchasing': ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
+  'Admin': ['Pending','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Shop Use': ['Pending','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Returns Requisition': ['Pending','Operations HOD','Finance HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared'],
+  'Purchasing': ['Pending','Purchasing HOD','Finance HOD','Director','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared']
 };
 
 const STATUS_ACTOR_MAP = {
   'Admin': {
-    'Pending': 'Reviewer',
-    'Reviewer': 'Finance HOD',
+    'Pending': 'Finance HOD',
     'Finance HOD': 'Director',
     'Director': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
@@ -21,8 +20,7 @@ const STATUS_ACTOR_MAP = {
     'Change Cleared': 'Treasurer'
   },
   'Shop Use': {
-    'Pending': 'Reviewer',
-    'Reviewer': 'Operations HOD',
+    'Pending': 'Operations HOD',
     'Operations HOD': 'Finance HOD',
     'Finance HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
@@ -31,8 +29,7 @@ const STATUS_ACTOR_MAP = {
     'Change Cleared': 'Treasurer'
   },
   'Returns Requisition': {
-    'Pending': 'Reviewer',
-    'Reviewer': 'Operations HOD',
+    'Pending': 'Operations HOD',
     'Operations HOD': 'Finance HOD',
     'Finance HOD': 'Treasurer',
     'Pending Disbursement': 'Treasurer',
@@ -41,8 +38,7 @@ const STATUS_ACTOR_MAP = {
     'Change Cleared': 'Treasurer'
   },
   'Purchasing': {
-    'Pending': 'Reviewer',
-    'Reviewer': 'Purchasing HOD',
+    'Pending': 'Purchasing HOD',
     'Purchasing HOD': 'Finance HOD',
     'Finance HOD': 'Director',
     'Director': 'Treasurer',
@@ -62,7 +58,6 @@ function getNextActorRole(status, type) {
 function statusDisplayName(status) {
   const map = {
     'Pending': 'Submitted',
-    'Reviewer': 'Supervisor Review',
     'Purchasing HOD': 'Purchasing Review',
     'Finance HOD': 'Finance Review',
     'Director': 'Director Approval',
@@ -511,7 +506,7 @@ function renderQueue() {
     );
   }
 
-  const STATUS_ORDER = ['Pending','Reviewer','Purchasing HOD','Finance HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
+  const STATUS_ORDER = ['Pending','Purchasing HOD','Finance HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
   filtered.sort((a, b) => {
     const aIdx = STATUS_ORDER.indexOf(a.status);
     const bIdx = STATUS_ORDER.indexOf(b.status);
@@ -1405,7 +1400,6 @@ function renderApprovalFlow() {
   if (!flow) { container.innerHTML = ''; return; }
   const labels = {
     'Pending': 'Created',
-    'Reviewer': 'Review',
     'Purchasing HOD': 'Purchasing',
     'Finance HOD': 'Finance',
     'Director': 'Director',
@@ -1416,7 +1410,7 @@ function renderApprovalFlow() {
     'Change Cleared': 'Cleared'
   };
   const ROLE_INITIALS = {
-    'Reviewer': 'RV','Purchasing HOD': 'PH','Finance HOD': 'FH',
+    'Purchasing HOD': 'PH','Finance HOD': 'FH',
     'Director': 'DR','Operations HOD': 'OH',
     'Treasurer': 'T','Requestor': 'CR'
   };
