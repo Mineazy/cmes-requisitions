@@ -682,6 +682,66 @@ async function edit(req, res) {
   }
 }
 
+async function cancelRequisition(req, res) {
+  try {
+    const reqId = req.params.id;
+    const { reason } = req.body;
+
+    const result = await query(
+      `SELECT r.*, u.name as requestor_name
+       FROM requisitions r
+       JOIN users u ON r.requestor_id = u.id
+       WHERE r.req_id = ?`,
+      [reqId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Requisition not found' });
+    }
+
+    const requisition = result.rows[0];
+
+    if (requisition.status === 'Cancelled') {
+      return res.status(400).json({ error: 'Requisition is already cancelled' });
+    }
+    if (requisition.status === 'Change Cleared') {
+      return res.status(400).json({ error: 'Cannot cancel a closed requisition' });
+    }
+    if (requisition.status === 'Issued') {
+      return res.status(400).json({ error: 'Cannot cancel a disbursed requisition' });
+    }
+
+    const flow = STATUS_FLOW[requisition.type];
+    const disburseIdx = flow.indexOf('Pending Disbursement');
+    const currentIdx = flow.indexOf(requisition.status);
+    if (currentIdx < 0 || currentIdx >= disburseIdx) {
+      return res.status(400).json({ error: 'Requisition has already passed the approval stage and cannot be cancelled' });
+    }
+
+    await query(
+      `UPDATE requisitions SET status = 'Cancelled', rejection_reason = ?, updated_at = NOW() WHERE id = ?`,
+      [reason || 'Cancelled by Admin', requisition.id]
+    );
+
+    await query(
+      `INSERT INTO approvals (requisition_id, stage, action, user_id, reason, timestamp)
+       VALUES (?, ?, 'Cancelled', ?, ?, NOW())`,
+      [requisition.id, requisition.status, req.user.id, reason || 'Cancelled by Admin']
+    );
+
+    res.json({ message: `Requisition ${reqId} cancelled`, status: 'Cancelled' });
+
+    logAudit({
+      userId: req.user.id, userName: req.user.name, userRole: req.user.role,
+      action: 'CANCEL_REQUISITION', entityType: 'requisition', entityId: reqId,
+      details: `Cancelled "${requisition.title}" - ${reason || 'No reason provided'}`
+    });
+  } catch (err) {
+    console.error('Cancel requisition error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 async function restartApproval(req, res) {
   try {
     const reqId = req.params.id;
@@ -733,6 +793,7 @@ module.exports = {
   getById,
   create,
   edit,
+  cancelRequisition,
   restartApproval,
   processApproval,
   queueDisbursement,

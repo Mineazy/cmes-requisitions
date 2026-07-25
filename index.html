@@ -329,6 +329,7 @@
                     <option value="Change Returned/Pending">Return Pending Clearance</option>
                     <option value="Change Cleared">Reconciled &amp; Closed</option>
                     <option value="Rejected">Rejected</option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
                   <button class="action-btn-sm" id="admin-req-refresh">Refresh</button>
                 </div>
@@ -468,7 +469,10 @@
               </div>
             </div>
             <div id="admin-actions-block" style="display:none;border-top:1px solid var(--border-color);padding-top:12px;margin-top:12px;">
-              <button class="btn-reject" onclick="window.restartApprovalFlow()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Restart Approval Flow</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn-reject" onclick="window.restartApprovalFlow()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Restart Approval Flow</button>
+                <button class="btn-reject" style="background:linear-gradient(135deg,#dc2626,#991b1b);" onclick="window.cancelRequisition()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Cancel Requisition</button>
+              </div>
             </div>
           </div>
         </div>

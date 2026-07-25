@@ -25,6 +25,9 @@ router.put('/:id', requireRole('Requestor'), upload.array('attachments', 10), re
 // Admin: Restart approval flow (reset to Pending, clear history)
 router.post('/:id/restart-approval', requireRole('Admin'), requisitionController.restartApproval);
 
+// Admin: Cancel requisition (before Pending Disbursement)
+router.post('/:id/cancel', requireRole('Admin'), requisitionController.cancelRequisition);
+
 // Process approval/rejection
 router.post('/:id/approve', requisitionController.processApproval);
 

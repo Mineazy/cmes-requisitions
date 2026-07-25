@@ -724,6 +724,7 @@ main {
 .status-change-pending { background-color: rgba(139, 92, 246, 0.15); color: #a78bfa; }
 .status-change-cleared { background-color: rgba(16, 185, 129, 0.3); color: #059669; }
 .status-rejected { background-color: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.status-cancelled { background-color: rgba(107, 114, 128, 0.15); color: #6b7280; }
 
 /* Requisition Creation Form */
 .form-card {
@@ -1479,6 +1480,24 @@ main {
   border-color: var(--copper);
   background-color: var(--copper-light);
   box-shadow: 0 0 8px var(--copper);
+}
+
+.stepper-node.rejected-node,
+.stepper-node.cancelled-node {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.stepper-node.rejected-node::before {
+  border-color: #ef4444;
+  background-color: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.stepper-node.cancelled-node::before {
+  border-color: #6b7280;
+  background-color: #6b7280;
+  box-shadow: 0 0 8px #6b7280;
 }
 
 .stepper-node.skipped {

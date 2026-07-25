@@ -66,13 +66,15 @@ function statusDisplayName(status) {
     'Issued': 'Issued',
     'Change Returned/Pending': 'Return Pending Clearance',
     'Change Cleared': 'Reconciled & Closed',
-    'Rejected': 'Rejected'
+    'Rejected': 'Rejected',
+    'Cancelled': 'Cancelled'
   };
   return map[status] || status;
 }
 
 function nextActionLabel(req) {
   if (req.status === 'Rejected') return 'Rejected';
+  if (req.status === 'Cancelled') return 'Cancelled';
   if (req.status === 'Change Cleared') return 'Reconciled & Closed';
   const nextRole = getNextActorRole(req.status, req.type);
   return nextRole ? `Awaiting ${nextRole}` : statusDisplayName(req.status);
@@ -399,7 +401,7 @@ function renderDashboard() {
 function getActionItemsForUser() {
   const userRole = state.currentUser ? state.currentUser.role : '';
   return state.requisitions.filter(r => {
-    if (r.status === 'Rejected' || r.status === 'Change Cleared') return false;
+    if (r.status === 'Rejected' || r.status === 'Cancelled' || r.status === 'Change Cleared') return false;
     const activeRequiredRole = getNextActorRole(r.status, r.type);
     if (!activeRequiredRole) return false;
     if (activeRequiredRole === userRole) {
@@ -423,6 +425,7 @@ function renderRequisitionCardHTML(req) {
   else if (req.status === 'Change Returned/Pending') statusClass = 'status-change-pending';
   else if (req.status === 'Change Cleared') statusClass = 'status-change-cleared';
   else if (req.status === 'Rejected') statusClass = 'status-rejected';
+  else if (req.status === 'Cancelled') statusClass = 'status-cancelled';
 
   const itemsText = req.items && req.items.length > 0
     ? req.items.length === 1 ? req.items[0].description : `${req.items[0].description} + ${req.items.length - 1} more items`
@@ -506,7 +509,7 @@ function renderQueue() {
     );
   }
 
-  const STATUS_ORDER = ['Pending','Purchasing HOD','Finance HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected'];
+  const STATUS_ORDER = ['Pending','Purchasing HOD','Finance HOD','Director','Operations HOD','Pending Disbursement','Issued','Change Returned/Pending','Change Cleared','Rejected','Cancelled'];
   filtered.sort((a, b) => {
     const aIdx = STATUS_ORDER.indexOf(a.status);
     const bIdx = STATUS_ORDER.indexOf(b.status);
@@ -1049,6 +1052,8 @@ function renderModalActionsPanel(req, userOverride) {
     return;
   }
 
+  if (req.status === 'Cancelled') return;
+
   if (req.status === 'Change Cleared') return;
 
   const activeRequiredRole = getNextActorRole(req.status, req.type);
@@ -1085,6 +1090,7 @@ function renderStepper(req) {
   const flow = STATUS_FLOW[req.type];
   let currentStatusIndex = flow.indexOf(req.status);
   let isRejected = req.status === 'Rejected';
+  let isCancelled = req.status === 'Cancelled';
   let rejectedStageIndex = -1;
 
   if (isRejected) {
@@ -1092,6 +1098,13 @@ function renderStepper(req) {
     const lastHist = history[history.length - 1];
     rejectedStageIndex = flow.indexOf(lastHist ? lastHist.stage : '');
     currentStatusIndex = rejectedStageIndex;
+  }
+
+  if (isCancelled) {
+    const history = req.history || [];
+    const lastHist = history.filter(h => h.action === 'Cancelled')[0];
+    rejectedStageIndex = flow.indexOf(lastHist ? lastHist.stage : '');
+    currentStatusIndex = rejectedStageIndex >= 0 ? rejectedStageIndex : 0;
   }
 
   let stepperHtml = '';
@@ -1109,6 +1122,11 @@ function renderStepper(req) {
         const history = req.history || [];
         const hist = history[history.length - 1];
         statusText = `Rejected by ${hist ? hist.user_name : ''}: "${hist ? (hist.reason || '') : ''}"`;
+      } else if (isCancelled) {
+        statusClass += ' cancelled-node';
+        const history = req.history || [];
+        const hist = history.filter(h => h.action === 'Cancelled')[0];
+        statusText = `Cancelled by ${hist ? hist.user_name : 'Admin'}: "${hist ? (hist.reason || '') : ''}"`;
       } else {
         statusClass += ' active-stage';
         const nextRole = getNextActorRole(stage, req.type);
@@ -1328,6 +1346,22 @@ window.restartApprovalFlow = async function() {
   } catch (err) { alert('Failed: ' + err.message); }
 };
 
+window.cancelRequisition = async function() {
+  const req = state.selectedRequisition;
+  if (!req) return;
+  const reason = prompt('Reason for cancellation:', '');
+  if (reason === null) return;
+  if (!confirm(`Are you sure you want to cancel ${req.req_id}? This action cannot be undone.`)) return;
+  try {
+    const data = await apiFetch('POST', `/requisitions/${req.req_id}/cancel`, { reason: reason || 'Cancelled by Admin' });
+    showToastNotification(data.message || 'Requisition cancelled.');
+    closeDetailsModal();
+    await loadInitialData();
+    renderDashboard();
+    renderQueue();
+  } catch (err) { alert('Cancellation failed: ' + err.message); }
+};
+
 // --- Email Drawer ---
 function toggleEmailDrawer() {
   const drawer = document.getElementById('email-simulator-drawer');
@@ -1440,9 +1474,9 @@ async function renderAdminPanel() {
     document.getElementById('admin-stat-zmw').textContent = `K${stats.totalZmw.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     document.getElementById('admin-stat-usd').textContent = `$${stats.totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-    const pendingStatuses = stats.byStatus.filter(s => !['Change Cleared', 'Rejected'].includes(s.status));
+    const pendingStatuses = stats.byStatus.filter(s => !['Change Cleared', 'Rejected', 'Cancelled'].includes(s.status));
     const pendingCount = pendingStatuses.reduce((a, s) => a + parseInt(s.count), 0);
-    const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
+    const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected', 'Cancelled'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
     document.getElementById('admin-stat-pending').textContent = pendingCount;
     const pendingBreakdown = pendingStatuses.map(s => `${statusDisplayName(s.status)}: ${s.count}`).join(' | ');
     document.getElementById('admin-stat-pending-sub').textContent = pendingBreakdown || 'No pending items';
@@ -1484,9 +1518,9 @@ async function adminRefreshStats() {
     document.getElementById('admin-stat-zmw').textContent = `K${stats.totalZmw.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     document.getElementById('admin-stat-usd').textContent = `$${stats.totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-    const pendingStatuses = stats.byStatus.filter(s => !['Change Cleared', 'Rejected'].includes(s.status));
+    const pendingStatuses = stats.byStatus.filter(s => !['Change Cleared', 'Rejected', 'Cancelled'].includes(s.status));
     const pendingCount = pendingStatuses.reduce((a, s) => a + parseInt(s.count), 0);
-    const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
+    const closedCount = stats.byStatus.filter(s => ['Change Cleared', 'Rejected', 'Cancelled'].includes(s.status)).reduce((a, s) => a + parseInt(s.count), 0);
     document.getElementById('admin-stat-pending').textContent = pendingCount;
     document.getElementById('admin-stat-pending-sub').textContent = pendingStatuses.map(s => `${statusDisplayName(s.status)}: ${s.count}`).join(' | ') || 'No pending items';
     document.getElementById('admin-stat-closed').textContent = closedCount;
