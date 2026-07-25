@@ -226,3 +226,22 @@
 - Overhauled `statusDisplayName()` with complete mapping for all statuses: `Submitted`, `Supervisor Review`, `Purchasing Review`, `Finance Review`, `Director Approval`, `Operations Review`, `Awaiting Disbursement`, `Return Pending Clearance`, `Reconciled & Closed`.
 - Updated admin filter dropdown, stepper labels, card badges, and admin stats to use consistent display names.
 - **Files:** `app.js`, `index.html`
+
+## 26. Remove Reviewer Stage from All Approval Flows
+- Removed `Reviewer` as the first approval stage in all four flows. `Pending` now maps directly to the next approver role.
+- **New flows:**
+  - **Admin:** Pending → Finance HOD → Director → Disburse
+  - **Shop Use:** Pending → Operations HOD → Finance HOD → Disburse
+  - **Returns Requisition:** Pending → Operations HOD → Finance HOD → Disburse
+  - **Purchasing:** Pending → Purchasing HOD → Finance HOD → Director → Disburse
+- Removed `Reviewer` from `VALID_ROLES`, `STATUS_ACTOR_MAP`, `STATUS_FLOW`, `STATUS_ORDER`, frontend constants, CSS avatar colors, HTML role dropdowns, and test setup.
+- Ran migration to advance any requisitions stuck at "Reviewer": Admin → Finance HOD, Shop Use/Returns → Operations HOD, Purchasing → Purchasing HOD.
+- **Files:** `backend/src/utils/constants.js`, `backend/src/controllers/adminController.js`, `backend/tests/api.test.js`, `app.js`, `index.html`, `index.css`
+
+## 27. Admin Cancel Requisition
+- Added `POST /:id/cancel` endpoint (Admin only) that cancels requisitions before `Pending Disbursement`.
+- Validates: not already cancelled/closed/disbursed, status index < disbursement index.
+- Sets status to `Cancelled`, records in approvals table with reason, writes audit log.
+- Frontend: Cancel button (red X icon) in admin actions panel with reason prompt + confirmation dialog.
+- `Cancelled` status handled in: `statusDisplayName`, `nextActionLabel`, badge CSS (gray), stepper node (gray ring), admin stats (excluded from pending, counted as closed), STATUS_ORDER, getActionItemsForUser.
+- **Files:** `backend/src/controllers/requisitionController.js`, `backend/src/routes/requisitions.js`, `app.js`, `index.html`, `index.css`
