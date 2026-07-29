@@ -413,7 +413,7 @@ function getActionItemsForUser() {
 }
 
 function renderRequisitionCardHTML(req) {
-  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
   const displayAmt = `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   let statusClass = 'status-pending';
   if (req.status === 'Purchasing HOD') statusClass = 'status-approver1';
@@ -568,7 +568,7 @@ function changeQueueFilter(filterType) {
 // --- Form ---
 function getCurrencySymbol() {
   const el = document.getElementById('req-currency');
-  return el && el.value === 'USD' ? '$' : 'K';
+  return el && el.value === 'ZMW' ? 'K' : el.value === 'USD' ? '$' : 'P';
 }
 
 function updateCurrencyDisplay() {
@@ -740,7 +740,7 @@ window.resubmitRequisition = function() {
 
   const container = document.getElementById('items-rows-container');
   container.innerHTML = '';
-  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
 
   items.forEach(it => {
     const rowId = `item_row_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
@@ -914,7 +914,7 @@ async function openDetails(reqId) {
     editBtn.style.display = canEdit ? 'flex' : 'none';
 
     const tbody = document.getElementById('detail-items-tbody');
-    const symbol = req.currency === 'ZMW' ? 'K' : '$';
+    const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
     tbody.innerHTML = (req.items || []).map(it => `<tr>
       <td>${it.description}</td>
       <td><span style="font-size:0.75rem;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;color:var(--text-secondary);">${it.category}</span></td>
@@ -983,7 +983,7 @@ window.editRequisition = function() {
 
   const container = document.getElementById('items-rows-container');
   container.innerHTML = '';
-  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
 
   (req.items || []).forEach(it => {
     const rowId = `item_row_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
@@ -1568,7 +1568,7 @@ function renderAdminRequisitions(requisitions) {
     return `<div class="admin-req-card">
       <div class="req-info">
         <h4>${r.req_id} - ${escHtml(r.title)}</h4>
-        <p>${escHtml(r.requestor_name)} &middot; ${r.type} &middot; ${r.currency === 'ZMW' ? 'K' : '$'}${parseFloat(r.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+        <p>${escHtml(r.requestor_name)} &middot; ${r.type} &middot; ${r.currency === 'ZMW' ? 'K' : r.currency === 'USD' ? '$' : 'P'}${parseFloat(r.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
         <span class="status-badge ${badge}">${nextActionLabel(r)}</span>
@@ -1782,7 +1782,7 @@ window.downloadApprovedPdf = function() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
   const maxWidth = pageWidth - margin * 2;

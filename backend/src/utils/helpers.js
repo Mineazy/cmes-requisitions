@@ -11,7 +11,7 @@ function formatTimestamp(date) {
 }
 
 function currencySymbol(currency) {
-  return currency === 'ZMW' ? 'K' : '$';
+  return currency === 'ZMW' ? 'K' : currency === 'USD' ? '$' : 'P';
 }
 
 module.exports = { generateReqId, formatTimestamp, currencySymbol };

@@ -53,7 +53,7 @@ async function notifyNextApprover(req) {
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];
-  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
   const formattedAmount = `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
   const email = await createEmail({
@@ -143,7 +143,7 @@ async function notifyEdit(req) {
   if (userResult.rows.length === 0) return null;
 
   const recipient = userResult.rows[0];
-  const symbol = req.currency === 'ZMW' ? 'K' : '$';
+  const symbol = req.currency === 'ZMW' ? 'K' : req.currency === 'USD' ? '$' : 'P';
   const formattedAmount = `${symbol}${parseFloat(req.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
   const email = await createEmail({
