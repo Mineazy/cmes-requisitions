@@ -154,7 +154,11 @@ async function create(req, res) {
     )).rows[0];
     fullReq.items = parsedItems;
 
-    await emailService.notifyNextApprover(fullReq);
+    try {
+      await emailService.notifyNextApprover(fullReq);
+    } catch (err) {
+      console.error('Approval notification failed (non-blocking):', err.message);
+    }
 
     res.status(201).json({
       message: `Requisition ${reqId} created successfully`,

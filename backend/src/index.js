@@ -116,6 +116,10 @@ if (isProduction) {
 
 // Error handling middleware
 app.use((err, req, res, _next) => {
+  if (err.name === 'MulterError' || err.isUploadError) {
+    const msg = err.code === 'LIMIT_FILE_SIZE' ? 'File too large (max 10MB per file)' : err.message;
+    return res.status(400).json({ error: msg });
+  }
   console.error('Unhandled error:', err);
   res.status(err.status || 500).json({
     error: isProduction ? 'Internal server error' : err.message

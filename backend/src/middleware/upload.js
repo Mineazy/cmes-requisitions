@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const UPLOAD_DIR = path.resolve(__dirname, '../../uploads/attachments');
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -17,7 +18,9 @@ const ALLOWED_TYPES = [
 ];
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  destination: (req, file, cb) => {
+    fs.mkdir(UPLOAD_DIR, { recursive: true }, (err) => cb(err, UPLOAD_DIR));
+  },
   filename: (req, file, cb) => {
     const unique = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
     const ext = path.extname(file.originalname) || '';
@@ -27,7 +30,9 @@ const storage = multer.diskStorage({
 
 function fileFilter(req, file, cb) {
   if (ALLOWED_TYPES.includes(file.mimetype)) return cb(null, true);
-  cb(new Error(`File type "${file.mimetype}" is not allowed. Allowed: PDF, images, DOC, XLS, TXT, ZIP, RAR`), false);
+  const e = new Error(`File type "${file.mimetype}" is not allowed. Allowed: PDF, images, DOC, XLS, TXT, ZIP, RAR`);
+  e.isUploadError = true;
+  cb(e, false);
 }
 
 const upload = multer({
