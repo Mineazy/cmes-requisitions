@@ -245,3 +245,9 @@
 - Frontend: Cancel button (red X icon) in admin actions panel with reason prompt + confirmation dialog.
 - `Cancelled` status handled in: `statusDisplayName`, `nextActionLabel`, badge CSS (gray), stepper node (gray ring), admin stats (excluded from pending, counted as closed), STATUS_ORDER, getActionItemsForUser.
 - **Files:** `backend/src/controllers/requisitionController.js`, `backend/src/routes/requisitions.js`, `app.js`, `index.html`, `index.css`
+
+## 28. Add Botswana Pula (BWP) Currency Option
+- Added `BWP - Botswana Pula (P)` as third option in the requisition currency dropdown.
+- Updated all currency symbol resolution points (7 in `app.js`, 2 in `emailService.js`, `helpers.js`) from binary `ZMW ? 'K' : '$'` to ternary `ZMW ? 'K' : USD ? '$' : 'P'`.
+- No DB schema change needed (`currency VARCHAR(10)` already accommodates `BWP`).
+- **Files:** `index.html`, `app.js`, `backend/src/utils/helpers.js`, `backend/src/services/emailService.js`
