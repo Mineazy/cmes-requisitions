@@ -128,6 +128,29 @@ let state = {
 };
 
 // --- API Client ---
+async function openAttachment(ev, reqId, fileId) {
+  if (ev) ev.preventDefault();
+  // Open the tab synchronously to avoid popup blockers, then load the authenticated file into it
+  const win = window.open('', '_blank');
+  try {
+    const res = await fetch(`${API_BASE}/requisitions/${encodeURIComponent(reqId)}/attachments/${fileId}`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    if (!res.ok) {
+      let msg = `Request failed (${res.status})`;
+      try { msg = (await res.json()).error || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    if (win) win.location.href = url; else window.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (err) {
+    if (win) win.close();
+    alert('Could not open attachment: ' + err.message);
+  }
+}
+
 async function apiFetch(method, path, body) {
   const opts = {
     method,
@@ -942,7 +965,7 @@ async function openDetails(reqId) {
         const size = a.file_size > 1024 * 1024
           ? (a.file_size / (1024 * 1024)).toFixed(1) + ' MB'
           : (a.file_size / 1024).toFixed(0) + ' KB';
-        return `<a href="${API_BASE}/requisitions/${req.req_id}/attachments/${a.id}" target="_blank" class="attachment-link">
+        return `<a href="#" onclick="openAttachment(event, '${req.req_id}', ${a.id}); return false;" class="attachment-link">
           ${icon}
           <span class="attachment-name">${escHtml(a.original_name)}</span>
           <span class="attachment-size">${size}</span>
